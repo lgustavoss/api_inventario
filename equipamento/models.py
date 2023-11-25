@@ -48,3 +48,18 @@ class Equipamento(models.Model):
 
     def __str__(self):
         return self.tag_patrimonio
+    
+
+
+class TransferenciaEmpresa(models.Model):
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.CASCADE)
+    empresa_origem = models.ForeignKey(Empresa, related_name='transferencias_origem', on_delete=models.CASCADE)
+    empresa_destino = models.ForeignKey(Empresa, related_name='transferencias_destino', on_delete=models.CASCADE)
+    data_transferencia = models.DateTimeField(auto_now_add=True)
+
+
+class TransferenciaColaborador(models.Model):
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.CASCADE)
+    colaborador_origem = models.ForeignKey(Colaborador, related_name='colaborador_origem', on_delete=models.CASCADE)
+    colaborador_destino = models.ForeignKey(Colaborador, related_name='colaborador_destino', on_delete=models.CASCADE)
+    data_transferencia = models.DateTimeField(auto_now_add=True)
