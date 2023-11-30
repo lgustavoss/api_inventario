@@ -33,18 +33,19 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
 
-        if 'include_transferencias' in request.query_params:
-            transferencias_empresa = TransferenciaEmpresa.objects.filter(equipamento=instance)
-            transferencias_empresa_serializer = TransferenciaEmpresaSerializer(transferencias_empresa, many=True)
-            transferencias_colaborador = TransferenciaColaborador.objects.filter(equipamento=instance)
-            transferencias_colaborador_serializer = TransferenciaColaboradorSerializer(transferencias_colaborador, many=True)
-            response_data = {
-                'equipamento': serializer.data,
-                'transferencia_empresa': transferencias_empresa_serializer.data,
-                'transferencia_colaborador': transferencias_colaborador_serializer.data
-            }
-            return Response(response_data)
-        return Response(serializer.data)
+        transferencias_empresa = TransferenciaEmpresa.objects.filter(equipamento=instance)
+        transferencias_empresa_serializer = TransferenciaEmpresaSerializer(transferencias_empresa, many=True)
+        
+        transferencias_colaborador = TransferenciaColaborador.objects.filter(equipamento=instance)
+        transferencias_colaborador_serializer = TransferenciaColaboradorSerializer(transferencias_colaborador, many=True)
+
+        response_data = {
+            'equipamento': serializer.data,
+            'transferencia_empresa': transferencias_empresa_serializer.data,
+            'transferencia_colaborador': transferencias_colaborador_serializer.data
+        }
+
+        return Response(response_data)
 
 
 class EquipamentoTransferenciaEmpresaView(APIView):
@@ -85,6 +86,9 @@ class EquipamentoTransferenciaColaboradorView(APIView):
 
         serializer = TransferenciaColaboradorSerializer(data=request.data)
         if serializer.is_valid():
-            transferencia = serializer.save(equipamento=equipamento)
+            # Incluir o equipamento no serializer antes de salvar
+            serializer.validated_data['equipamento'] = equipamento
+            transferencia = serializer.save()
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

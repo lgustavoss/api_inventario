@@ -21,7 +21,7 @@ def validar_cnpj(value):
     # Remova a máscara para validação
     cleaned_value = re.sub(r'[^0-9]', '', value)
 
-    # Verifique se o número pertence a um CPF ou CNPJ
+    # Verifique se o número pertence a um CNPJ
     if len(cleaned_value) == 14:
         cnpj_instance = CNPJ()
         if not cnpj_instance.validate(cleaned_value):

@@ -8,6 +8,9 @@ router.register(r'', ColaboradorViewSet) # 'colaborador' é o nome da rota
 
 #urls
 urlpatterns = [
-    path("", include(router.urls)), #incluindo as rotas geradas pelo router
+    #incluindo as rotas geradas pelo router
+    path("", include(router.urls)),
+
+    # Rota para atualizar o status de um colaborador específico por PK
     path('<int:pk>/status/', ColaboradorStatusUpdateView.as_view(), name='colaborador-status-update'),
 ]

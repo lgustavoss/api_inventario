@@ -21,7 +21,7 @@ def validar_cpf(value):
     # Remova a máscara para validação
     cleaned_value = re.sub(r'[^0-9]', '', value)
 
-    # Verifique se o número pertence a um CPF ou CNPJ
+    # Verifique se o número pertence a um CPF
     if len(cleaned_value) == 11:
         cpf_instance = CPF()
         if not cpf_instance.validate(cleaned_value):
