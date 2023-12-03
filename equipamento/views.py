@@ -1,10 +1,12 @@
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador
-from .serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer, TransferenciaColaboradorSerializer
+from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento ,SITUACAO_EQUIPAMENTO_CHOICES
+from .serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer, TransferenciaColaboradorSerializer, HistoricoSituacaoEquipamentoSerializer
 from empresa.models import Empresa
+from colaborador.models import Colaborador
 
 
 
@@ -13,12 +15,7 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
     serializer_class = EquipamentoSerializer
     pagination_class = PageNumberPagination
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        if self.action == 'list':
-            context['include_transferencias'] = True
-        return context
-
+    # Listagem de todos os equipamentos
     def list(self, request, *args, **kwargs):
         #Acessando o valor do 'page size' na consulta
         page_size = request.query_params.get('page_size')
@@ -29,6 +26,7 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
         
         return super().list(request, *args, **kwargs)
     
+    # Detalhes de um equipamento específico
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -39,13 +37,57 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
         transferencias_colaborador = TransferenciaColaborador.objects.filter(equipamento=instance)
         transferencias_colaborador_serializer = TransferenciaColaboradorSerializer(transferencias_colaborador, many=True)
 
+        alteracao_situacao = AlteracaiSituacaoEquipamento.objects.filter(equipamento=instance)
+        alteracao_situacao_serializer = HistoricoSituacaoEquipamentoSerializer(alteracao_situacao, many=True)
+
         response_data = {
             'equipamento': serializer.data,
             'transferencia_empresa': transferencias_empresa_serializer.data,
-            'transferencia_colaborador': transferencias_colaborador_serializer.data
+            'transferencia_colaborador': transferencias_colaborador_serializer.data,
+            'alteracao_situacao': alteracao_situacao_serializer.data
         }
 
         return Response(response_data)
+    
+    # Atualização da situação de um equipamento
+    @action(detail=True, methods=['put'])
+    def atualizar_situacao(self, request, pk=None):
+        equipamento = self.get_object()
+        nova_situacao = request.data.get('situacao')
+
+        if nova_situacao is None:
+            return Response({"error":"Você deve fornecer uma nova situação para atualização."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validando se a nova situação está entre as opções permitidas
+        opcoes_situacao = dict(SITUACAO_EQUIPAMENTO_CHOICES)
+        if nova_situacao not in opcoes_situacao.keys():
+            return Response({"error": "Nova situação inválida."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        if nova_situacao == equipamento.situacao:
+            return Response({"error": "A nova situação é igual a situação atual"}, 
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        historico_serializer = HistoricoSituacaoEquipamentoSerializer(data={
+            'equipamento': equipamento.pk,
+            'situacao_anterior': equipamento.situacao,
+            'situacao_nova': nova_situacao
+        })
+
+        if historico_serializer.is_valid():
+            historico_serializer.save()
+        else:
+            return Response(historico_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        equipamento.situacao = nova_situacao
+        equipamento.save()
+
+        return Response(historico_serializer.data, status=status.HTTP_200_OK)
+    
+    # Escolher o serializador apropriado
+    def get_serializer_class(self):
+        return EquipamentoSerializer
 
 
 class EquipamentoTransferenciaEmpresaView(APIView):
@@ -84,11 +126,28 @@ class EquipamentoTransferenciaColaboradorView(APIView):
     def post(self, request, pk):
         equipamento = Equipamento.objects.get(pk=pk)
 
+        # Obtendo o colaborador atual do equipamento
+        colaborador_origem_padrao = equipamento.colaborador
+
+        # Definindo o valor padrão para o colaborador de origem na transferencia
+        request.data['colaborador_origem'] = colaborador_origem_padrao.id
+
+        novo_colaborador_id = request.data.get('colaborador_destino')
+
+        # Verificando se o colaborador de origem é diferente do colaborador de destino
+        if novo_colaborador_id == colaborador_origem_padrao.id:
+            return Response({"error":"O colaborador e destino é o mesmo que o colaborador atual do equipamento"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = TransferenciaColaboradorSerializer(data=request.data)
         if serializer.is_valid():
-            # Incluir o equipamento no serializer antes de salvar
-            serializer.validated_data['equipamento'] = equipamento
-            transferencia = serializer.save()
+            # Salvar a transferencia
+            transferencia = serializer.save(equipamento=equipamento)
+
+            # Atualizando o equipamento com o novo colaborador
+            novo_colaborador = Colaborador.objects.get(pk=novo_colaborador_id)
+            equipamento.colaborador = novo_colaborador
+            equipamento.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
