@@ -9,6 +9,9 @@ router.register(r'', EmpresaViewSet) # 'empresa' é o nome da rota
 
 #urls
 urlpatterns = [
-    path("", include(router.urls)), #incluindo rotas geradas pelo DefaultRouter
+    # Incluindo rotas geradas pelo DefaultRouter
+    path("", include(router.urls)),
+
+    # Rota para atualizar o status de uma empresa específica por PK
     path('<int:pk>/status/', EmpresaStatusUpdateView.as_view(), name='empresa-status-update'),
 ]

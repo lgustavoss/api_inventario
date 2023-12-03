@@ -63,3 +63,10 @@ class TransferenciaColaborador(models.Model):
     colaborador_origem = models.ForeignKey(Colaborador, related_name='colaborador_origem', on_delete=models.CASCADE)
     colaborador_destino = models.ForeignKey(Colaborador, related_name='colaborador_destino', on_delete=models.CASCADE)
     data_transferencia = models.DateTimeField(auto_now_add=True)
+
+
+class AlteracaiSituacaoEquipamento(models.Model):
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.CASCADE)
+    situacao_anterior = models.CharField(max_length=1, choices=SITUACAO_EQUIPAMENTO_CHOICES)
+    situacao_nova = models.CharField(max_length=1, choices=SITUACAO_EQUIPAMENTO_CHOICES)
+    data_alteracao = models.DateTimeField(auto_now_add=True)

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import TipoEquipamentoViewSet
+from .views import TipoEquipamentoViewSet, TipoEquipamentoStatusUpdateView
 
 #Objeto DefaultRouter para configurar as rotas automaticamente
 router = DefaultRouter()
@@ -8,5 +8,9 @@ router.register(r'', TipoEquipamentoViewSet) # 'tipo_equipamento' é o nome da r
 
 #urls
 urlpatterns = [
-    path("", include(router.urls)), #incluindo as rotas geradas pelo router
+    # Incluindo as rotas geradas pelo router
+    path("", include(router.urls)), 
+
+    # Rotas para atualizar o status de um tipo de equipamento especifico por PK
+    path('<int:pk>/status/', TipoEquipamentoStatusUpdateView.as_view(), name='tipo_equipamento-status-update')
 ]
