@@ -17,10 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('colaborador/', include('colaborador.urls')), #chamando a rota de urls de colaborador
     path('empresa/', include('empresa.urls')), #chamando a rota de urls de empresa
     path('tipo_equipamento/', include('tipo_equipamento.urls')), #chamando a rota de urls de tipo_equipamento
     path('equipamento/', include('equipamento.urls')), #chamando a rota de urls de equipamento
+    path('usuario/', include('users.urls')), #chamando a rota de urls de usuarios
 ]
