@@ -4,7 +4,7 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from users.serializers import UserSerializer, GrupoSerializer
+from users.serializers import UserSerializer, GrupoSerializer, GrupoDetailSerializer
 
 
 class UserListView(generics.ListAPIView):
@@ -52,6 +52,10 @@ class GrupoCreateView(APIView):
 class GrupoListView(generics.ListAPIView):
     queryset = Group.objects.all()
     serializer_class = GrupoSerializer
+
+class GrupoDetailView(RetrieveAPIView):
+    queryset = Group.objects.all()
+    serializer_class = GrupoDetailSerializer
 
 class GrupoEditView(APIView):
     def get_grupo(self, pk):
@@ -108,3 +112,68 @@ class AssociarUsuarioGrupo(APIView):
         serializer = UserSerializer(usuario)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def has_permission_to_view_empresa(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_empresa', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode visualizar empresas
+    return grupos_com_permissao.exists()
+
+
+def has_permission_to_detail_empresa(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualiza_detalhe_empresa', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode visualizar detalhes de uma empresa
+    return grupos_com_permissao.exists()
+
+def has_permission_to_edit_empresa(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='editar_empresa', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode editar uma empresa
+    return grupos_com_permissao.exists()
+
+def has_permission_to_view_colaborador(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_colaborador', user=user)
+
+    # Se houver algum grupo com permisão, o usuário pode visualizar colaborador
+    return grupos_com_permissao.exists()
+
+def has_permission_to_detail_colaborador(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualiza_detalhe_colaborador', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode visualizar detalhes de uma colaborador
+    return grupos_com_permissao.exists()
+
+def has_permission_to_edit_colaborador(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='editar_colaborador', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode editar uma colaborador
+    return grupos_com_permissao.exists()
+
+def has_permission_to_view_tipo_equipamento(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_tipo_equipamento', user=user)
+
+    # Se houver algum grupo com permisão, o usuário pode visualizar tipo_equipamento
+    return grupos_com_permissao.exists()
+
+def has_permission_to_detail_tipo_equipamento(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualiza_detalhe_tipo_equipamento', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode visualizar detalhes de uma tipo_equipamento
+    return grupos_com_permissao.exists()
+
+def has_permission_to_edit_tipo_equipamento(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='editar_tipo_equipamento', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode editar uma tipo_equipamento
+    return grupos_com_permissao.exists()
