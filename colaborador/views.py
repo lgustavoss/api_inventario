@@ -34,9 +34,22 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para visualizar colaboradores'}, status=status.HTTP_403_FORBIDDEN)
     
+    def create(self, request, *args, **kwargs):
+        if has_permission_to_edit_colaborador(request.user):
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'Usuário sem permissão para criar colaborador'}, status=status.HTTP_403_FORBIDDEN)
+    
     def update(self, request, *args, **kwargs):
         if has_permission_to_edit_colaborador(request.user):
-            return super().update(request, *args, **kwargs)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
         else:
             return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -76,9 +89,9 @@ class ColaboradorStatusUpdateView(APIView):
         Atualiza parcialmente o status de um colaborador especificado por PK.
         """
         colaborador = Colaborador.objects.get(pk=pk)
-        serializer = ColaboradorStatusSerializer(colaborador, data=request.data, partial=True)
 
         if has_permission_to_edit_colaborador(request.user):
+            serializer = ColaboradorStatusSerializer(colaborador, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

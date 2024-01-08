@@ -100,6 +100,10 @@ class AssociarUsuarioGrupo(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Usuário não encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+        # Remover todos os grupos atuais do usuário
+        usuario.groups.clear()
+
+        # Adiciondo os novos grupos ao usuário
         for grupo_id in grupos_ids:
             try:
                 grupo = Group.objects.get(pk=grupo_id)

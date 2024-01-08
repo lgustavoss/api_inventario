@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models.signals import post_migrate
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from .validators import validar_cpf
 
@@ -17,6 +17,18 @@ class Colaborador(models.Model):
 
     # Status do colaborador, indicando se está ativo ou não (padrão: ativo)
     status = models.BooleanField(default=True)
+
+    # Data de cadastro do colaborador (auto_now_add garante que é preenchido automaticamente na criação)
+    data_cadastro = models.DateTimeField(auto_now_add = True)
+
+    # Usuário que cadastrou o colaborador (relacionamento ForeignKey com o modelo user do Django)
+    usuario_cadastro = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='colaboradores_criados', null=True)
+
+    # Data da ultima alteração do colaborador
+    data_ultima_ateracao = models.DateTimeField(null=True, default=None)
+
+    # Usuário que realizou a ultima alteração no colaborador
+    usuario_ultima_alteracao = models.ForeignKey(User, on_delete = models.SET_NULL, related_name='colaboradores_alterados', null=True)
 
     class Meta:
         # Ordenando os colaboradores pelo nome por padrão
