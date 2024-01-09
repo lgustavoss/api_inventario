@@ -34,9 +34,23 @@ class EmpresaViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para visualizar empresas'}, status=status.HTTP_403_FORBIDDEN)
         
+    
+    def create(self, request, *args, **kwargs):
+        if has_permission_to_edit_empresa(request.user):
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'Usuário sem permissão para cadastrar uma empresa'})
+
     def update(self, request, *args, **kwargs):
         if has_permission_to_edit_empresa(request.user):
-            return super().update(request, *args, **kwargs)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
         else:
             return Response({'error': 'Usuário sem permissão para editar empresa'}, status=status.HTTP_403_FORBIDDEN)
     
@@ -78,6 +92,7 @@ class EmpresaStatusUpdateView(APIView):
         serializer = EmpresaStatusSerializer(empresa, data=request.data, partial=True)
 
         if has_permission_to_edit_empresa(request.user):
+            serializer = EmpresaStatusSerializer(empresa, data=request.data, partial=True, context={'context': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

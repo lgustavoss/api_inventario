@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models.signals import post_migrate
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from .validators import validar_cnpj
 
@@ -9,10 +9,26 @@ class Empresa(models.Model):
     """
     Modelo para representar as empresas
     """
-    # Campos do modelo Empresa
+    # Nome da empresa
     nome = models.CharField(max_length=100, null=False, blank=False)
+
+    # CNPJ da empresa, unico e validado pelo validador validar_cnpj
     cnpj = models.CharField(max_length=18, null=False, blank=False, unique=True, validators=[validar_cnpj])
+
+    # Status da empresa, indicando se está ativo ou não (padrão: ativo)
     status = models.BooleanField(default=True)
+
+    # Data de cadastro da empresa(auto_now_add garante que é preenchido automaticamente na criação)
+    data_cadastro = models.DateTimeField(auto_now_add=True)
+
+    # Usuário que cadastrou a empresa(relacionamento ForeignKey com o modelo user do Django)
+    usuario_cadastro = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='empresas_criadas', null=True)
+
+    # Data da ultima ateração da empresa
+    data_ultima_alteracao = models.DateTimeField(null=True, default=None)
+
+    # Usuário que realizou a ultima alteração na empresa
+    usuario_ultima_alteracao = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='empresas_alteradas', null=True)
 
     class Meta:
         # Ordenando as empresas pelo nome por padrão

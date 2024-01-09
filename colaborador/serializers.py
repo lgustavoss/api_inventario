@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import Colaborador
 from equipamento.serializers import EquipamentoSerializer
-from equipamento.models import Equipamento
+
 
 
 # Serializador para detalhes do Colaborador
@@ -54,7 +54,7 @@ class ColaboradorStatusSerializer(serializers.ModelSerializer):
         if novo_status is not None and instance.status != novo_status:
             if novo_status is False and instance.equipamento_set.exists():
                 raise serializers.ValidationError("Não é permitido inativar um colaborador que está vinculado a um equipamento.")
-        
+                
             instance.status = novo_status
             instance.usuario_ultima_alteracao = user
             instance.data_ultima_ateracao = timezone.now()  # Define a data de alteração apenas se houver mudanças
