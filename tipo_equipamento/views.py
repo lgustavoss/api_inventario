@@ -32,10 +32,23 @@ class TipoEquipamentoViewSet(viewsets.ModelViewSet):
             return super().list(request, *args, **kwargs)
         else:
             return Response({'error': 'Usuário sem permissão para visualizar tipos de equipamento'}, status=status.HTTP_403_FORBIDDEN)
+        
+    def create(self, request, *args, **kwargs):
+        if has_permission_to_edit_tipo_equipamento(request.user):
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error':'Usuario sem permissão para criar um tipo de equipamento'}, status=status.HTTP_403_FORBIDDEN)
 
     def update(self, request, *args, **kwargs):
         if has_permission_to_edit_tipo_equipamento(request.user):
-            return super().update(request, *args, **kwargs)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
         else:
             return Response({'error': 'Usuário sem permissão para editar tipos de equipamento'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -75,9 +88,9 @@ class TipoEquipamentoStatusUpdateView(APIView):
         Atualiza parcialmente o status de um tipod e equipamento especificado por PK.
         """
         tipo_equipamento = TipoEquipamento.objects.get(pk=pk)
-        serializer = TipoEquipamentoSerializer(tipo_equipamento, data=request.data, partial=True)
 
         if has_permission_to_edit_tipo_equipamento(request.user):
+            serializer = TipoEquipamentoSerializer(tipo_equipamento, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

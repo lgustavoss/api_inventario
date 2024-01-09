@@ -7,6 +7,7 @@ from equipamento.serializers import EquipamentoSerializer
 
 # Serializador para detalhes do Colaborador
 class ColaboradorSerializer(serializers.ModelSerializer):
+    # Relacionamento com Equipamentos (somente leitura)
     equipamentos = EquipamentoSerializer(many=True, read_only=True)
 
     class Meta:

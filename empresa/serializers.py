@@ -28,7 +28,7 @@ class EmpresaSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
 
         # Verifica se houve alteração nos dados antes de atualizar
-        has_changed = any(field in validated_data for field in ['nome', 'cpf', 'status'])
+        has_changed = any(field in validated_data for field in ['nome', 'cnpj', 'status'])
 
         if has_changed:
             instance.nome = validated_data.get('nome', instance.nome)
