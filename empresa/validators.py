@@ -28,3 +28,7 @@ def validar_cnpj(value):
             raise ValidationError('CNPJ inválido')
     else:
         raise ValidationError('Favor informar um CNPJ válido')
+    
+# Validando se o usuário tem permissão necessária
+def has_permission_to_view_empresa(user):
+    return user.groups.filter(permissions__codename='visualizar_empresa').exists()

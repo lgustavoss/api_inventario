@@ -6,6 +6,7 @@ from .serializers import TipoEquipamentoSerializer
 from .models import TipoEquipamento
 from equipamento.serializers import EquipamentoSerializer
 from equipamento.models import Equipamento
+from users.views import has_permission_to_view_tipo_equipamento, has_permission_to_detail_tipo_equipamento, has_permission_to_edit_tipo_equipamento
 
 
 class TipoEquipamentoViewSet(viewsets.ModelViewSet):
@@ -23,30 +24,60 @@ class TipoEquipamentoViewSet(viewsets.ModelViewSet):
         #Acessando o valor do 'page size' na consulta
         page_size = request.query_params.get('page_size')
 
-        if page_size:
-            #se 'page_size' for especificado, use o valor fornecido
-            self.paginator.page_size = int(page_size)
+        if has_permission_to_view_tipo_equipamento(request.user):
+            if page_size:
+                #se 'page_size' for especificado, use o valor fornecido
+                self.paginator.page_size = int(page_size)
 
-        return super().list(request, *args, **kwargs)
+            return super().list(request, *args, **kwargs)
+        else:
+            return Response({'error': 'Usuário sem permissão para visualizar tipos de equipamento'}, status=status.HTTP_403_FORBIDDEN)
+        
+    def create(self, request, *args, **kwargs):
+        if has_permission_to_edit_tipo_equipamento(request.user):
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error':'Usuario sem permissão para criar um tipo de equipamento'}, status=status.HTTP_403_FORBIDDEN)
+
+    def update(self, request, *args, **kwargs):
+        if has_permission_to_edit_tipo_equipamento(request.user):
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'Usuário sem permissão para editar tipos de equipamento'}, status=status.HTTP_403_FORBIDDEN)
+
     
     def partial_update(self, request, *args, **kwargs):
         """
         Atualiza parcialmente um tipo de equipamento.
         """
-        kwargs['partial'] = True
-        return self.update(request, *args, **kwargs)
-    
+        if has_permission_to_edit_tipo_equipamento(request.user):
+            kwargs['partial'] = True
+            return self.update(request, *args, **kwargs)
+        else:
+            return Response({'error': 'Usuário sem permissão para editar tipos de equipamento'}, status=status.HTTP_403_FORBIDDEN)
+
 
     def retrieve(self, request, *args, **kwargs):
         """
         Retorna os tipos de equipamentos com os equipamentos associados.
         """
-        instance = self.get_object()
-        equipamentos = Equipamento.objects.filter(tipo_equipamento=instance)
-        serializer = self.get_serializer(instance)
-        data = serializer.data
-        data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
-        return Response(data)
+        if has_permission_to_detail_tipo_equipamento(request.user):
+            instance = self.get_object()
+            equipamentos = Equipamento.objects.filter(tipo_equipamento=instance)
+            serializer = self.get_serializer(instance)
+            data = serializer.data
+            data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
+            return Response(data)
+        else:
+            return Response({'error': 'Usuário sem permissão para visualizar detalhes dos tipos de equipamento'}, status=status.HTTP_403_FORBIDDEN)
+
     
 class TipoEquipamentoStatusUpdateView(APIView):
     """
@@ -57,10 +88,14 @@ class TipoEquipamentoStatusUpdateView(APIView):
         Atualiza parcialmente o status de um tipod e equipamento especificado por PK.
         """
         tipo_equipamento = TipoEquipamento.objects.get(pk=pk)
-        serializer = TipoEquipamentoSerializer(tipo_equipamento, data=request.data, partial=True)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if has_permission_to_edit_tipo_equipamento(request.user):
+            serializer = TipoEquipamentoSerializer(tipo_equipamento, data=request.data, partial=True, context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Usuário sem permissão para alterar o status do tipo de equipamento'}, status=status.HTTP_403_FORBIDDEN)
+
     
