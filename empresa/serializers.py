@@ -11,7 +11,7 @@ class EmpresaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Empresa
-        fields = ['id', 'nome', 'cnpj', 'status', 'data_cadastro', 'usurario_cadastro', 'data_ultimo_alteracao', 'usuario_ultima_alteracao', 'equipamentos']
+        fields = ['id', 'nome', 'cnpj', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao', 'equipamentos']
         read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
 
     def create(self, validated_data):

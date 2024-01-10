@@ -22,7 +22,7 @@ class TipoEquipamento(models.Model):
     usuario_cadastro = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tipo_equipamentos_criados', null=True)
 
     # Data da ultima alteração do tipo de equipamento
-    ultima_alteracao = models.DateTimeField(null=True, default=None)
+    data_ultima_alteracao = models.DateTimeField(null=True, default=None)
 
     # Usuario da ultima alteração no tipo de equipamento
     usuario_ultima_alteracao = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tipo_equipamento_alterados', null=True)

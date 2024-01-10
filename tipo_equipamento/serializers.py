@@ -11,8 +11,8 @@ class TipoEquipamentoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TipoEquipamento
-        fields = ['id', 'tipo', 'status', 'usuario_cadastro', 'data_ultima_ateracao', 'usuario_ultima_alteracao', 'equipamentos']
-        read_only_fields = ['data_ultima_ateracao', 'usuario_ultima_alteracao']
+        fields = ['id', 'tipo', 'status', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao', 'equipamentos']
+        read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
 
     def create(self, validated_data):
         user = self.context['request'].user
