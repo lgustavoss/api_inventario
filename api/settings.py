@@ -158,3 +158,18 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Adicione o domínio do aplicativo Angular
     # Outros domínios permitidos, se aplicável
 ]
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',  # Ajuste conforme necessário (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    },
+}

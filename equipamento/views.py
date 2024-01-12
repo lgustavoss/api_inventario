@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from django.utils import timezone
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento ,SITUACAO_EQUIPAMENTO_CHOICES
 from .serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer, TransferenciaColaboradorSerializer, HistoricoSituacaoEquipamentoSerializer
 from empresa.models import Empresa
@@ -28,11 +29,24 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
             return super().list(request, *args, **kwargs)
         else:
             return Response({'error': 'Usuário sem permissão para visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
+        
+    def create(self, request, *args, **kwargs):
+        if has_permission_to_edit_equipamento(request.user):
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error':'Usuário sem permissão para criar um equipamento'}, status=status.HTTP_403_FORBIDDEN)
     
     # Edição de um equipamento
     def update(self, request, *args, **kwargs):
         if has_permission_to_edit_equipamento(request.user):
-            return super().update(request, *args, **kwargs)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=True, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Usuário sem permissão para editar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -67,17 +81,18 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
     def atualizar_situacao(self, request, pk=None):
         if has_permission_to_edit_equipamento(request.user):
             equipamento = self.get_object()
-            nova_situacao = request.data.get('situacao')
+            nova_situacao = request.data.get('situacao_nova')
+            user = request.user.pk
 
             if nova_situacao is None:
                 return Response({"error":"Você deve fornecer uma nova situação para atualização."},
                                 status=status.HTTP_400_BAD_REQUEST)
             
             # Validando se a nova situação está entre as opções permitidas
-            opcoes_situacao = dict(SITUACAO_EQUIPAMENTO_CHOICES)
-            if nova_situacao not in opcoes_situacao.keys():
+            if nova_situacao not in dict(SITUACAO_EQUIPAMENTO_CHOICES).keys():
                 return Response({"error": "Nova situação inválida."},
                                 status=status.HTTP_400_BAD_REQUEST)
+
             
             if nova_situacao == equipamento.situacao:
                 return Response({"error": "A nova situação é igual a situação atual"}, 
@@ -86,7 +101,9 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
             historico_serializer = HistoricoSituacaoEquipamentoSerializer(data={
                 'equipamento': equipamento.pk,
                 'situacao_anterior': equipamento.situacao,
-                'situacao_nova': nova_situacao
+                'situacao_nova': nova_situacao,
+                'usuario_situacao_equipamento': user,
+                'data_alteracao': timezone.now(),
             })
 
             if historico_serializer.is_valid():
