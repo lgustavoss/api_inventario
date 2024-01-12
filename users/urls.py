@@ -1,5 +1,6 @@
 from django.urls import path
 from users.views import (
+    CreateUserView,
     UserListView,
     UserDetailView,
     GrupoCreateView,
@@ -12,7 +13,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 urlpatterns = [
-    path('', UserListView.as_view(), name='user-list'), # rota para urls de usuarios
+    path('listar/', UserListView.as_view(), name='user-list'), # rota para urls de usuarios
+    path('cadastrar/', CreateUserView.as_view(), name='create-user'), # rota para cadastrar usuarios
     path('<int:pk>/', UserDetailView.as_view(), name='user-detail'),  # Rota para detalhes do usuário
     path('grupos/associar/', AssociarUsuarioGrupo.as_view(), name='associar-usuario-grupo'), # Rota para vincular usuarios aos grupos
     path('grupos/', GrupoListView.as_view(), name='grupo-lista'),  # Rota para listagem de grupos
