@@ -13,7 +13,10 @@ class TransferenciaColaboradorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransferenciaColaborador
-        fields = ('colaborador_origem', 'colaborador_destino', 'data_transferencia')
+        fields = ('colaborador_origem', 'colaborador_destino', 'data_transferencia', 'usuario_transferencia_colaborador')
+        extra_kwargs = {
+            'usuario_transferencia_colaborador': {'required': False}
+        }
 
 
 # Serializador para Transferência de Empresa
@@ -23,13 +26,16 @@ class TransferenciaEmpresaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransferenciaEmpresa
-        fields = ('empresa_origem', 'empresa_destino', 'data_transferencia')
+        fields = ('empresa_origem', 'empresa_destino', 'data_transferencia', 'usuario_transferencia_empresa')
+        extra_kwargs = {
+            'usuario_transferencia_empresa': {'required': False}
+        }
 
 
 class HistoricoSituacaoEquipamentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlteracaiSituacaoEquipamento
-        fields = '__all__'
+        fields = ('situacao_anterior', 'situacao_nova', 'data_alteracao', 'equipamento', 'usuario_situacao_equipamento')
 
 
 # Serializador para Alteração de Situação do Equipamento
@@ -59,7 +65,6 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         return representation
 
     def update(self, instance, validated_data):
-        user = self.context['request'].user
         campos_nao_editaveis = ['tag_patrimonio', 'empresa', 'colaborador', 'situacao']
 
         for campo, valor in validated_data.items():

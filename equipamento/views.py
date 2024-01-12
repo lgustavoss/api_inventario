@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
+from operator import itemgetter
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento ,SITUACAO_EQUIPAMENTO_CHOICES
 from .serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer, TransferenciaColaboradorSerializer, HistoricoSituacaoEquipamentoSerializer
 from empresa.models import Empresa
@@ -50,26 +51,37 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para editar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
 
-    # Detalhes de um equipamento específico
+    # Detalhes de um equipamento específico com o histórico de movimentações
     def retrieve(self, request, *args, **kwargs):
         if has_permission_to_detail_equipamento(request.user):
             instance = self.get_object()
             serializer = self.get_serializer(instance)
 
+            # Criando a lista de transferencias entre empresas
             transferencias_empresa = TransferenciaEmpresa.objects.filter(equipamento=instance)
             transferencias_empresa_serializer = TransferenciaEmpresaSerializer(transferencias_empresa, many=True)
             
+            # Criando a lista de transferencias entre colaboradores
             transferencias_colaborador = TransferenciaColaborador.objects.filter(equipamento=instance)
             transferencias_colaborador_serializer = TransferenciaColaboradorSerializer(transferencias_colaborador, many=True)
 
+            # Criando a lista de alteração de situação
             alteracao_situacao = AlteracaiSituacaoEquipamento.objects.filter(equipamento=instance)
             alteracao_situacao_serializer = HistoricoSituacaoEquipamentoSerializer(alteracao_situacao, many=True)
 
+            # Juntando todas a listas para montar o histórico
+            historico = list(
+                transferencias_empresa_serializer.data +
+                transferencias_colaborador_serializer.data +
+                alteracao_situacao_serializer.data
+                )
+            
+            # Ordenando o histórico pela 'data_transferencia ou data_alteracao'
+            historico_ordenado = sorted(historico, key=lambda x: x.get('data_transferencia', x.get('data_alteracao')), reverse=True)
+
             response_data = {
                 'equipamento': serializer.data,
-                'transferencia_empresa': transferencias_empresa_serializer.data,
-                'transferencia_colaborador': transferencias_colaborador_serializer.data,
-                'alteracao_situacao': alteracao_situacao_serializer.data
+                'historico': historico_ordenado,
             }
 
             return Response(response_data)
@@ -141,8 +153,13 @@ class EquipamentoTransferenciaEmpresaView(APIView):
             if nova_empresa_id == empresa_origem_default.id:
                 return Response({"error": "A empresa de destino é a mesma que a empresa atual do equipamento."},
                                 status=status.HTTP_400_BAD_REQUEST)
+            
+            # Atribuindo o usuário antes de criar o serializer
+            request.data['usuario_transferencia_empresa'] = request.user.pk
 
+            # Criando o serializer
             serializer = TransferenciaEmpresaSerializer(data=request.data)
+
             if serializer.is_valid():
                 # Salvar a transferência
                 transferencia = serializer.save(equipamento=equipamento)
@@ -176,7 +193,12 @@ class EquipamentoTransferenciaColaboradorView(APIView):
                 return Response({"error":"O colaborador e destino é o mesmo que o colaborador atual do equipamento"},
                                 status=status.HTTP_400_BAD_REQUEST)
             
+            # Atribuindo o usuário antes de criar o serializer
+            request.data['usuario_transferencia_colaborador'] = request.user.pk
+
+            # Criando o serializer            
             serializer = TransferenciaColaboradorSerializer(data=request.data)
+            
             if serializer.is_valid():
                 # Salvar a transferencia
                 transferencia = serializer.save(equipamento=equipamento)
