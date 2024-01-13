@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models.signals import post_migrate
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from empresa.models import Empresa
 from colaborador.models import Colaborador
@@ -45,7 +45,9 @@ class Equipamento(models.Model):
     observacao = models.TextField(
         null=False, blank=True)
     data_cadastro = models.DateTimeField(auto_now_add=True)
-    ultima_alteracao = models.DateTimeField(auto_now=True)
+    usuario_cadastro = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='equipamentos_criados', null=True)
+    data_ultima_alteracao = models.DateTimeField(null=True, default=None)
+    usuario_ultima_alteracao = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='equipamento_alterados', null=True)
     status = models.BooleanField(default=True)
 
     def __str__(self):
@@ -57,6 +59,7 @@ class TransferenciaEmpresa(models.Model):
     equipamento = models.ForeignKey(Equipamento, on_delete=models.CASCADE)
     empresa_origem = models.ForeignKey(Empresa, related_name='transferencias_origem', on_delete=models.CASCADE)
     empresa_destino = models.ForeignKey(Empresa, related_name='transferencias_destino', on_delete=models.CASCADE)
+    usuario_transferencia_empresa = models.ForeignKey(User, related_name='usuario_transferencia_empresa', on_delete=models.CASCADE)
     data_transferencia = models.DateTimeField(auto_now_add=True)
 
 
@@ -64,6 +67,7 @@ class TransferenciaColaborador(models.Model):
     equipamento = models.ForeignKey(Equipamento, on_delete=models.CASCADE)
     colaborador_origem = models.ForeignKey(Colaborador, related_name='colaborador_origem', on_delete=models.CASCADE)
     colaborador_destino = models.ForeignKey(Colaborador, related_name='colaborador_destino', on_delete=models.CASCADE)
+    usuario_transferencia_colaborador = models.ForeignKey(User, related_name='usuario_tranferencia_colaborador', on_delete=models.CASCADE)
     data_transferencia = models.DateTimeField(auto_now_add=True)
 
 
@@ -71,6 +75,7 @@ class AlteracaiSituacaoEquipamento(models.Model):
     equipamento = models.ForeignKey(Equipamento, on_delete=models.CASCADE)
     situacao_anterior = models.CharField(max_length=1, choices=SITUACAO_EQUIPAMENTO_CHOICES)
     situacao_nova = models.CharField(max_length=1, choices=SITUACAO_EQUIPAMENTO_CHOICES)
+    usuario_situacao_equipamento = models.ForeignKey(User, related_name='usuario_situacao_equipamento', on_delete=models.CASCADE)
     data_alteracao = models.DateTimeField(auto_now_add=True)
 
 

@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from django.utils import timezone
+from operator import itemgetter
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento ,SITUACAO_EQUIPAMENTO_CHOICES
 from .serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer, TransferenciaColaboradorSerializer, HistoricoSituacaoEquipamentoSerializer
 from empresa.models import Empresa
@@ -28,34 +30,58 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
             return super().list(request, *args, **kwargs)
         else:
             return Response({'error': 'Usuário sem permissão para visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
+        
+    def create(self, request, *args, **kwargs):
+        if has_permission_to_edit_equipamento(request.user):
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error':'Usuário sem permissão para criar um equipamento'}, status=status.HTTP_403_FORBIDDEN)
     
     # Edição de um equipamento
     def update(self, request, *args, **kwargs):
         if has_permission_to_edit_equipamento(request.user):
-            return super().update(request, *args, **kwargs)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=True, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Usuário sem permissão para editar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
 
-    # Detalhes de um equipamento específico
+    # Detalhes de um equipamento específico com o histórico de movimentações
     def retrieve(self, request, *args, **kwargs):
         if has_permission_to_detail_equipamento(request.user):
             instance = self.get_object()
             serializer = self.get_serializer(instance)
 
+            # Criando a lista de transferencias entre empresas
             transferencias_empresa = TransferenciaEmpresa.objects.filter(equipamento=instance)
             transferencias_empresa_serializer = TransferenciaEmpresaSerializer(transferencias_empresa, many=True)
             
+            # Criando a lista de transferencias entre colaboradores
             transferencias_colaborador = TransferenciaColaborador.objects.filter(equipamento=instance)
             transferencias_colaborador_serializer = TransferenciaColaboradorSerializer(transferencias_colaborador, many=True)
 
+            # Criando a lista de alteração de situação
             alteracao_situacao = AlteracaiSituacaoEquipamento.objects.filter(equipamento=instance)
             alteracao_situacao_serializer = HistoricoSituacaoEquipamentoSerializer(alteracao_situacao, many=True)
 
+            # Juntando todas a listas para montar o histórico
+            historico = list(
+                transferencias_empresa_serializer.data +
+                transferencias_colaborador_serializer.data +
+                alteracao_situacao_serializer.data
+                )
+            
+            # Ordenando o histórico pela 'data_transferencia ou data_alteracao'
+            historico_ordenado = sorted(historico, key=lambda x: x.get('data_transferencia', x.get('data_alteracao')), reverse=True)
+
             response_data = {
                 'equipamento': serializer.data,
-                'transferencia_empresa': transferencias_empresa_serializer.data,
-                'transferencia_colaborador': transferencias_colaborador_serializer.data,
-                'alteracao_situacao': alteracao_situacao_serializer.data
+                'historico': historico_ordenado,
             }
 
             return Response(response_data)
@@ -67,17 +93,18 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
     def atualizar_situacao(self, request, pk=None):
         if has_permission_to_edit_equipamento(request.user):
             equipamento = self.get_object()
-            nova_situacao = request.data.get('situacao')
+            nova_situacao = request.data.get('situacao_nova')
+            user = request.user.pk
 
             if nova_situacao is None:
                 return Response({"error":"Você deve fornecer uma nova situação para atualização."},
                                 status=status.HTTP_400_BAD_REQUEST)
             
             # Validando se a nova situação está entre as opções permitidas
-            opcoes_situacao = dict(SITUACAO_EQUIPAMENTO_CHOICES)
-            if nova_situacao not in opcoes_situacao.keys():
+            if nova_situacao not in dict(SITUACAO_EQUIPAMENTO_CHOICES).keys():
                 return Response({"error": "Nova situação inválida."},
                                 status=status.HTTP_400_BAD_REQUEST)
+
             
             if nova_situacao == equipamento.situacao:
                 return Response({"error": "A nova situação é igual a situação atual"}, 
@@ -86,7 +113,9 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
             historico_serializer = HistoricoSituacaoEquipamentoSerializer(data={
                 'equipamento': equipamento.pk,
                 'situacao_anterior': equipamento.situacao,
-                'situacao_nova': nova_situacao
+                'situacao_nova': nova_situacao,
+                'usuario_situacao_equipamento': user,
+                'data_alteracao': timezone.now(),
             })
 
             if historico_serializer.is_valid():
@@ -124,8 +153,13 @@ class EquipamentoTransferenciaEmpresaView(APIView):
             if nova_empresa_id == empresa_origem_default.id:
                 return Response({"error": "A empresa de destino é a mesma que a empresa atual do equipamento."},
                                 status=status.HTTP_400_BAD_REQUEST)
+            
+            # Atribuindo o usuário antes de criar o serializer
+            request.data['usuario_transferencia_empresa'] = request.user.pk
 
+            # Criando o serializer
             serializer = TransferenciaEmpresaSerializer(data=request.data)
+
             if serializer.is_valid():
                 # Salvar a transferência
                 transferencia = serializer.save(equipamento=equipamento)
@@ -159,7 +193,12 @@ class EquipamentoTransferenciaColaboradorView(APIView):
                 return Response({"error":"O colaborador e destino é o mesmo que o colaborador atual do equipamento"},
                                 status=status.HTTP_400_BAD_REQUEST)
             
+            # Atribuindo o usuário antes de criar o serializer
+            request.data['usuario_transferencia_colaborador'] = request.user.pk
+
+            # Criando o serializer            
             serializer = TransferenciaColaboradorSerializer(data=request.data)
+            
             if serializer.is_valid():
                 # Salvar a transferencia
                 transferencia = serializer.save(equipamento=equipamento)

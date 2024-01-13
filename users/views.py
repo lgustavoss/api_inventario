@@ -1,11 +1,22 @@
+from rest_framework.permissions import IsAdminUser
 from django.contrib.auth.models import User, Group, Permission
 from rest_framework import generics, status
 from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from users.serializers import UserSerializer, GrupoSerializer, GrupoDetailSerializer
+from users.serializers import UserSerializer, GrupoSerializer, GrupoDetailSerializer, CreateUserSerializer
 
+
+class CreateUserView(generics.CreateAPIView):
+    serializer_class = CreateUserSerializer
+    permission_classes = [IsAdminUser] 
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class UserListView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
@@ -13,8 +24,17 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
 
 class UserDetailView(RetrieveAPIView):
+    permission_classes = [IsAdminUser]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+class UserSearchView(generics.ListAPIView):
+    permission_classes = [IsAdminUser]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        username = self.request.query_params.get('username', '')
+        return User.objects.filter(username__icontains=username)
 
 class GrupoCreateView(APIView):
     def post(self, request, format=None):
