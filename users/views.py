@@ -28,6 +28,14 @@ class UserDetailView(RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+class UserSearchView(generics.ListAPIView):
+    permission_classes = [IsAdminUser]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        username = self.request.query_params.get('username', '')
+        return User.objects.filter(username__icontains=username)
+
 class GrupoCreateView(APIView):
     def post(self, request, format=None):
         grupo_nome = request.data.get('name')
