@@ -155,8 +155,8 @@ REST_FRAMEWORK = {
 CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",  # Adicione o domínio do aplicativo Angular
-    # Outros domínios permitidos, se aplicável
+    "http://localhost:4200",  # Adicionado o domínio do aplicativo Angular
+    # Outros domínios
 ]
 
 
@@ -173,3 +173,16 @@ LOGGING = {
         'level': 'DEBUG',  # Ajuste conforme necessário (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     },
 }
+
+
+# Configurando email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.office365.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'admin@duplexsoft.com.br'
+EMAIL_HOST_PASSWORD = 'D305125x'
+DEFAULT_FROM_EMAIL = 'admin@duplexsoft.com.br'
+
+# Configurando url para reset de senha
+FRONTEND_URL = 'http://localhost:3000'
