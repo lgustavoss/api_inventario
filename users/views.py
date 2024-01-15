@@ -1,10 +1,14 @@
-from rest_framework.permissions import IsAdminUser
+from django.urls import reverse_lazy
 from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.views import PasswordResetView
+from rest_framework.permissions import IsAdminUser
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics, status
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from users.serializers import UserSerializer, GrupoSerializer, GrupoDetailSerializer, CreateUserSerializer
+from users.serializers import UserSerializer, GrupoSerializer, GrupoDetailSerializer, CreateUserSerializer, PasswordResetSerializer, UpdateUserSerializer
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -35,6 +39,36 @@ class UserSearchView(generics.ListAPIView):
     def get_queryset(self):
         username = self.request.query_params.get('username', '')
         return User.objects.filter(username__icontains=username)
+
+class UserPasswordResetView(PasswordResetView):
+    success_url = reverse_lazy('password_reset_done')
+
+class UpdateUserView(UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UpdateUserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+class PasswordResetRequestView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [AllowAny]
+    serializer_class = PasswordResetSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data.get('email')
+        # Verifique se o e-mail pertence a um usuário cadastrado
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'detail': 'O e-mail fornecido não está associado a um usuário cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(request=request)
+        return Response({'detail': 'Password reset e-mail has been sent.'}, status=status.HTTP_200_OK)
 
 class GrupoCreateView(APIView):
     def post(self, request, format=None):

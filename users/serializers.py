@@ -1,6 +1,12 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
-
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.core.mail import send_mail
+from django.contrib.auth import get_user_model
+from django.conf import settings
 
 class GrupoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,3 +67,42 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     def get_is_admin(self, obj):
         return obj.is_staff
+    
+class UpdateUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+        extra_kwargs = {'password': {'write_only': True}}
+
+
+User = get_user_model()
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        email = value
+        user = User.objects.filter(email=email).first()
+
+        if user:
+            # Criando o token para a redefinição de senha
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+
+            # Construindo a URL de redefinição de senha
+            reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+
+            # Enviando o e-mail de redefinição de senha
+            subject = 'Redefinição de Senha'
+            message = f'Clique no seguinte link para redefinir sua senha:\n\n{reset_url}'
+            from_email = settings.DEFAULT_FROM_EMAIL
+            to_email = [user.email]
+
+            send_mail(subject, message, from_email, to_email, fail_silently=False)
+
+        # Independentemente de encontrar ou não um usuário, retorne o valor validado
+        return value
+
+    def save(self, **kwargs):
+        # Este método é chamado implicitamente, mas podemos deixá-lo vazio, pois a lógica já está na validação de e-mail
+        pass
