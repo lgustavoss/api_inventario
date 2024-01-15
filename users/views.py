@@ -28,9 +28,19 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
 
 class UserDetailView(RetrieveAPIView):
-    permission_classes = [IsAdminUser]
-    queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]  # Verificando se o usuário tá autenticado
+
+    def get_object(self):
+        user_id = self.kwargs['pk']
+        user = get_object_or_404(User, id=user_id)
+
+        # Verificando se o usuário que faz a solicitação é um administrador ou o próprio usuário
+        if not self.request.user.is_staff and self.request.user != user:
+            raise PermissionDenied("Você não tem permissão para visualizar este usuário.")
+
+        return user
+
 
 class UserSearchView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
