@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -68,14 +68,42 @@ class UserDetailSerializer(serializers.ModelSerializer):
     def get_is_admin(self, obj):
         return obj.is_staff
     
-class UpdateUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['username', 'email']
-        extra_kwargs = {'password': {'write_only': True}}
-
 
 User = get_user_model()
+
+class UpdateUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def validate(self, attrs):
+        user = self.instance # Obtém a instância do usuário sendo atualizado
+        request_user = self.context['request'].user # Obtém o usuário que está fazendo a solicitação
+
+        # Verificando se o usuário que está fazendo a edição é admin ou o proprio usuário
+        if not request_user.is_admin and request_user != user:
+            raise serializers.ValidationError("Usuário sem permissão para editar esse usuário")
+        return attrs
+    
+    def update(self, instance, validated_data):
+        # Verificar se uma nova senha foi fornecida
+        new_password = validated_data.get('password')
+
+        if new_password:
+            instance.password = make_password(new_password)
+
+        # Atualizar os outros campos do usuário
+        instance.username = validated_data.get('username', instance.username)
+        instance.email = validated_data.get('email', instance.email)
+
+        # Salvar as alterações
+        instance.save()
+
+        return instance
+
 
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
