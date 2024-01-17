@@ -41,7 +41,7 @@ jobs:
         run: |
           ls
           python -m pip install --upgrade pip
-          pip install -r /usr/bin/bash/api/requerimentos.txt
+          pip install -r /usr/bin/bash/api_inventario/requerimentos.txt
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
