@@ -31,7 +31,7 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-          cd ../..
+          cd ..
       
       - name: Debug
         run: ls -R
