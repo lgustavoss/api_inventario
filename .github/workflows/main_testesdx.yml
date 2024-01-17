@@ -32,6 +32,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           cd ..
+          cd ..
       
       - name: Debug
         run: ls
@@ -39,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r ../api_inventario/requerimentos.txt
+          pip install -r requerimentos.txt
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
