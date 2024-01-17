@@ -31,17 +31,23 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-          cd ..
-          cd ..
       
-      - name: Debug
+      - name: Debug1
+        run: ls
+
+      # Se você precisar executar um git clone em um repositório diferente:
+      - name: Git Clone
+        run: git clone https://github.com/lgustavoss/api_inventario.git
+        # Lembre-se de substituir a URL do repositório e o caminho de destino conforme necessário
+
+      - name: Debug2
         run: ls
 
       - name: Install dependencies
         run: |
           ls
           python -m pip install --upgrade pip
-          pip install -r /usr/bin/bash/api_inventario/requerimentos.txt
+          pip install -r /api_inventario/requerimentos.txt
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
