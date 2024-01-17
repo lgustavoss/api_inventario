@@ -34,7 +34,7 @@ jobs:
           cd ..
       
       - name: Debug
-        run: ls -R
+        run: ls
 
       - name: Install dependencies
         run: |
