@@ -51,13 +51,19 @@ jobs:
           pip install -r requerimentos.txt
       
       - name: Executar makemigrations
-        run: python manage.py makemigrations
+        run: |
+          cd api_inventario
+          python manage.py makemigrations
 
       - name: Executar migrations
-        run: python manage.py migrate
+        run: |
+          cd api_inventario
+          python manage.py migrate
 
       - name: Executar servico
-        run: python manage.py runserver
+        run: |
+          cd api_inventario
+          python manage.py runserver
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
