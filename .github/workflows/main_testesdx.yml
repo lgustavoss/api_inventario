@@ -15,13 +15,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python version
-        uses: actions/setup-python@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.12'
-          node-version: 16
+          node-version: '16' # Use a versão mais recente do Node.js
+        id: setup-node
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12' # Sua versão do Python
+        id: setup-python
 
       - name: Create and start virtual environment
         run: |
