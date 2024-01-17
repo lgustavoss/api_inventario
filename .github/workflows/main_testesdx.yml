@@ -38,11 +38,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          dir
-          cd api_inventario
-          dir
           python -m pip install --upgrade pip
-          pip install -r requerimentos.txt
+          pip install -r ../api_inventario/requerimentos.txt
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
