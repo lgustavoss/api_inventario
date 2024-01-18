@@ -84,11 +84,17 @@ WSGI_APPLICATION = 'api.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'duplexsoft',
+        'USER': 'root',
+        'PASSWORD': 'dx305125',
+        'HOST': 'localhost',  # Pode ser alterado conforme necessário (por exemplo, endereço do servidor MySQL)
+        'PORT': '3306',  # Porta padrão do MySQL
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

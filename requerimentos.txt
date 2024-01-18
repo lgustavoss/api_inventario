@@ -1,7 +1,4 @@
 asgiref==3.7.2
-astroid==3.0.1
-colorama==0.4.6
-dill==0.3.7
 distlib==0.3.7
 Django==4.2.7
 django-cors-headers==4.3.0
@@ -9,15 +6,12 @@ django-filter==23.4
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.1
 filelock==3.12.4
-isort==5.12.0
 Markdown==3.5.1
-mccabe==0.7.0
+mysqlclient==2.2.1
 platformdirs==3.11.0
 PyJWT==2.8.0
-pylint==3.0.2
 pytz==2023.3.post1
 sqlparse==0.4.4
-tomlkit==0.12.3
 tzdata==2023.3
 validate-docbr==1.10.0
 virtualenv==20.24.5
