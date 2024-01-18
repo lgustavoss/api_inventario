@@ -15,50 +15,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16' # Use a versão mais recente do Node.js
-        id: setup-node
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Set up Python version
+        uses: actions/setup-python@v1
         with:
-          python-version: '3.12' # Sua versão do Python
-        id: setup-python
+          python-version: '3.12'
 
       - name: Create and start virtual environment
         run: |
           python -m venv venv
           source venv/bin/activate
-      
-      - name: Debug1
-        run: ls
-
-      # Se você precisar executar um git clone em um repositório diferente:
-      - name: Git Clone
-        run: git clone https://github.com/lgustavoss/api_inventario.git
-        # Lembre-se de substituir a URL do repositório e o caminho de destino conforme necessário
-
-      - name: Debug2
-        run: ls
 
       - name: Install dependencies
-        run: |
-          cd api_inventario
-          ls
-          python -m pip install --upgrade pip
-          pip install -r requerimentos.txt
-      
-      - name: Executar makemigrations
-        run: |
-          cd api_inventario
-          python manage.py makemigrations
-
-      - name: Executar migrations
-        run: |
-          cd api_inventario
-          python manage.py migrate
+        run: pip install -r requirements.txt
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       - name: Zip artifact for deployment
@@ -94,4 +64,4 @@ jobs:
         with:
           app-name: 'testesdx'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_7B82C8823E8743EBAD7B0C612E8262ED }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_31EC6F6BC9E34641B923C2E07F0EA7A4 }}
