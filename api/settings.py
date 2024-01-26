@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'empresa',
     'tipo_equipamento',
     'equipamento',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
@@ -92,6 +93,7 @@ DATABASES = {
         'PORT': '3306',  # Porta padrão do MySQL
         'OPTIONS': {
             'charset': 'utf8mb4',
+            'init_command': "SET time_zone = '-03:00'",
         },
     }
 }
