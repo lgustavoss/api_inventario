@@ -87,7 +87,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'duplexsoft',
         'USER': 'root',
-        'PASSWORD': 'dx305125',
+        'PASSWORD': 'root',
         'HOST': 'localhost',  # Pode ser alterado conforme necessário (por exemplo, endereço do servidor MySQL)
         'PORT': '3306',  # Porta padrão do MySQL
         'OPTIONS': {

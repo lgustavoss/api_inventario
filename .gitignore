@@ -29,6 +29,7 @@ Pipfile.lock
 
 # Arquivos gerados durante o build
 __pycache__/
+/migrations/
 *.pyc
 
 # Arquivos temporários
