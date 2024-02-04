@@ -47,10 +47,15 @@ class AlteracaoSituacaoSerializer(serializers.ModelSerializer):
 
 # Serializador principal para Equipamento
 class EquipamentoSerializer(serializers.ModelSerializer):
+
+    empresa_nome = serializers.CharField(source='empresa.nome', read_only=True)
+    colaborador_nome = serializers.CharField(source='colaborador.nome', read_only=True)
+    tipo_equipamento_nome = serializers.CharField(source='tipo_equipamento.tipo')
+
     class Meta:
         model = Equipamento
-        fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'pedido', 'data_compra', 'situacao',
-                  'empresa', 'colaborador', 'marca', 'modelo', 'especificacoes', 'acesso_remoto',
+        fields = ['id', 'tag_patrimonio', 'tipo_equipamento_nome', 'pedido', 'data_compra', 'situacao',
+                  'empresa_nome', 'colaborador_nome', 'marca', 'modelo', 'especificacoes', 'acesso_remoto',
                   'acesso_id', 'acesso_senha', 'observacao', 'data_cadastro', 'usuario_cadastro',
                   'data_ultima_alteracao', 'usuario_ultima_alteracao', 'status']
         read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
