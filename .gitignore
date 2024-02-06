@@ -37,3 +37,6 @@ __pycache__/
 
 # Arquivos de mídia
 media/
+
+# Arquivos de configuração local
+config_prod.py
