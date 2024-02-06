@@ -12,6 +12,16 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from .config_dev import (
+    conf_database,
+    conf_debug,
+    config_allowed_hosts,
+    config_secret_key,
+    config_cors_allowed_origins,
+    config_front_url,
+    config_email_user,
+    config_email_password,
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +31,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0g1jrsu4_x4+8qa$4**q(id2or=cu^()hg!i@23o&+3l1o8qh+'
+SECRET_KEY = config_secret_key
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = conf_debug
 
-ALLOWED_HOSTS = ['www.duplexsoft.com.br', 'localhost', '127.0.0.1']
+
+ALLOWED_HOSTS = config_allowed_hosts
 
 
 # Application definition
@@ -83,20 +94,7 @@ WSGI_APPLICATION = 'api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'duplexsoft',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',  # Pode ser alterado conforme necessário (por exemplo, endereço do servidor MySQL)
-        'PORT': '3306',  # Porta padrão do MySQL
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET time_zone = '-03:00'",
-        },
-    }
-}
+DATABASES = conf_database
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -163,11 +161,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_ALL_ORIGINS = False
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",  # Adicionado o domínio do aplicativo Angular
-    # Outros domínios
-]
-
+CORS_ALLOWED_ORIGINS = config_cors_allowed_origins
 
 LOGGING = {
     'version': 1,
@@ -189,19 +183,19 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.office365.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'admin@duplexsoft.com.br'
-EMAIL_HOST_PASSWORD = 'D305125x'
-DEFAULT_FROM_EMAIL = 'admin@duplexsoft.com.br'
+EMAIL_HOST_USER = config_email_user
+EMAIL_HOST_PASSWORD = config_email_password
+DEFAULT_FROM_EMAIL = config_email_user
 
 # Configurando url para reset de senha
-FRONTEND_URL = 'http://localhost:3000'
+FRONTEND_URL = config_front_url
 
 
 # Configurando o simplejwt
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=15),
     "ROTATE_REFRESH_TOKENS": True,
 
     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
