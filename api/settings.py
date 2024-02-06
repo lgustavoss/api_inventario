@@ -89,8 +89,8 @@ DATABASES = {
         'NAME': 'duplexsoft',
         'USER': 'root',
         'PASSWORD': 'root',
-        'HOST': 'localhost',  # Pode ser alterado conforme necessário (por exemplo, endereço do servidor MySQL)
-        'PORT': '3306',  # Porta padrão do MySQL
+        'HOST': 'localhost',  # Pode ser alterado conforme necessario (por exemplo, endereço do servidor MySQL)
+        'PORT': '3306',  # Porta padrao do MySQL
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET time_zone = '-03:00'",
