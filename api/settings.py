@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-0g1jrsu4_x4+8qa$4**q(id2or=cu^()hg!i@23o&+3l1o8qh+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.duplexsoft.com.br', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['www.duplexsoft.com.br', 'duplexsoft.com.br', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -90,6 +90,9 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': 'root',
         'HOST': 'localhost',  # Pode ser alterado conforme necessario (por exemplo, endereço do servidor MySQL)
+        #'USER': 'duplexsoft',
+        #'PASSWORD': 'dx305125',
+        #HOST': 'mysql.duplexsoft.com.br',
         'PORT': '3306',  # Porta padrao do MySQL
         'OPTIONS': {
             'charset': 'utf8mb4',
@@ -165,7 +168,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Adicionado o domínio do aplicativo Angular
-    # Outros domínios
+    "https://teste.duplexsoft.com.br",
 ]
 
 
