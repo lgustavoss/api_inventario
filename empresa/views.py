@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from .models import Empresa
 from .serializers import EmpresaSerializer, EmpresaStatusSerializer
-from equipamento.serializers import EquipamentoSerializer
-from equipamento.models import Equipamento
+from equipamento.serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer
+from equipamento.models import Equipamento, TransferenciaEmpresa
 from users.views import has_permission_to_view_empresa, has_permission_to_detail_empresa, has_permission_to_edit_empresa
 
 
@@ -99,3 +99,82 @@ class EmpresaStatusUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para alterar status de empresa'}, status=status.HTTP_403_FORBIDDEN)
+        
+
+class EmpresaTransferenciasView(APIView):
+    def get(self, request, pk):
+        try:
+            empresa = Empresa.objects.get(pk=pk)
+        except Empresa.DoesNotExist:
+            return Response({'error': "Empresa não encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not has_permission_to_detail_empresa(request.user):
+            return Response({'error': 'Usuário sem permissão para visualizar detalhes de uma empresa'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = EmpresaSerializer(empresa)
+        equipamentos = Equipamento.objects.filter(empresa=empresa)
+        
+        # Obtendo transferências de origem e destino, ordenando pela data de forma decrescente
+        transferencias_origem = TransferenciaEmpresa.objects.filter(empresa_origem=empresa).order_by('-data_transferencia')
+        transferencias_destino = TransferenciaEmpresa.objects.filter(empresa_destino=empresa).order_by('-data_transferencia')
+
+        # Formatando informações das transferências
+        transferencias_data = []
+
+        for transferencia_origem in transferencias_origem:
+            usuario_transferencia = transferencia_origem.usuario_transferencia_empresa
+
+            # Obtendo informações adicionais do equipamento
+            equipamento = Equipamento.objects.get(pk=transferencia_origem.equipamento.pk)
+            tag_patrimonio = equipamento.tag_patrimonio
+            tipo_equipamento_nome = equipamento.tipo_equipamento.tipo
+
+            # Verificando se a empresa de origem é igual à empresa que estamos visualizando
+            if transferencia_origem.empresa_origem == empresa:
+                outra_empresa = transferencia_origem.empresa_destino
+            else:
+                outra_empresa = transferencia_origem.empresa_origem
+
+            transferencia_data = {
+                "empresa_origem_nome": outra_empresa.nome,
+                "empresa_destino_nome": empresa.nome,
+                "usuario_transferencia_nome": usuario_transferencia.username,
+                "data_transferencia": transferencia_origem.data_transferencia,
+                "tag_patrimonio": tag_patrimonio,
+                "tipo_equipamento_nome": tipo_equipamento_nome,
+            }
+            transferencias_data.append(transferencia_data)
+
+        for transferencia_destino in transferencias_destino:
+            usuario_transferencia = transferencia_destino.usuario_transferencia_empresa
+
+            # Obtendo informações adicionais do equipamento
+            equipamento = Equipamento.objects.get(pk=transferencia_destino.equipamento.pk)
+            tag_patrimonio = equipamento.tag_patrimonio
+            tipo_equipamento_nome = equipamento.tipo_equipamento.tipo
+
+            # Verificando se a empresa de destino é igual à empresa que estamos visualizando
+            if transferencia_destino.empresa_destino == empresa:
+                outra_empresa = transferencia_destino.empresa_origem
+            else:
+                outra_empresa = transferencia_destino.empresa_destino
+
+            transferencia_data = {
+                "empresa_origem_nome": empresa.nome,
+                "empresa_destino_nome": outra_empresa.nome,
+                "usuario_transferencia_nome": usuario_transferencia.username,
+                "data_transferencia": transferencia_destino.data_transferencia,
+                "tag_patrimonio": tag_patrimonio,
+                "tipo_equipamento_nome": tipo_equipamento_nome,
+            }
+            transferencias_data.append(transferencia_data)
+
+        equipamento_serializer = EquipamentoSerializer(equipamentos, many=True)
+
+        data = {
+            "empresa": serializer.data,
+            "equipamentos": equipamento_serializer.data,
+            "transferencias": transferencias_data,
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
