@@ -12,7 +12,7 @@ class ColaboradorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Colaborador
-        fields = ['id', 'nome', 'cpf', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_ateracao', 'usuario_ultima_alteracao', 'equipamentos']
+        fields = ['id', 'nome', 'cpf', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao', 'equipamentos']
         read_only_fields = ['data_ultima_ateracao', 'usuario_ultima_alteracao']
 
     def create(self, validated_data):
@@ -36,7 +36,7 @@ class ColaboradorSerializer(serializers.ModelSerializer):
             instance.cpf = validated_data.get('cpf', instance.cpf)
             instance.status = validated_data.get('status', instance.status)
             instance.usuario_ultima_alteracao = user
-            instance.data_ultima_ateracao = timezone.now()  # Define a data de alteração apenas se houver mudanças
+            instance.data_ultima_alteracao = timezone.now()  # Define a data de alteração apenas se houver mudanças
             instance.save()
 
         return instance
@@ -58,7 +58,7 @@ class ColaboradorStatusSerializer(serializers.ModelSerializer):
                 
             instance.status = novo_status
             instance.usuario_ultima_alteracao = user
-            instance.data_ultima_ateracao = timezone.now()  # Define a data de alteração apenas se houver mudanças
+            instance.data_ultima_alteracao = timezone.now()  # Define a data de alteração apenas se houver mudanças
             instance.save()
         elif instance.status == novo_status:
             raise serializers.ValidationError("O colaborador já possui esse status.")
