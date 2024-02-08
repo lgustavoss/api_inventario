@@ -49,20 +49,48 @@ class AlteracaoSituacaoSerializer(serializers.ModelSerializer):
 class EquipamentoSerializer(serializers.ModelSerializer):
 
     empresa_nome = serializers.CharField(source='empresa.nome', read_only=True)
+    empresa_id = serializers.IntegerField(write_only=True)
     colaborador_nome = serializers.CharField(source='colaborador.nome', read_only=True)
-    tipo_equipamento_nome = serializers.CharField(source='tipo_equipamento.tipo')
+    colaborador_id = serializers.IntegerField(write_only=True)
+    tipo_equipamento_nome = serializers.CharField(source='tipo_equipamento.tipo', read_only=True)
+    tipo_equipamento_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Equipamento
-        fields = ['id', 'tag_patrimonio', 'tipo_equipamento_nome', 'pedido', 'data_compra', 'situacao',
-                  'empresa_nome', 'colaborador_nome', 'marca', 'modelo', 'especificacoes', 'acesso_remoto',
+        fields = ['id', 'tag_patrimonio', 'tipo_equipamento_nome', 'tipo_equipamento_id', 'pedido', 'data_compra', 'situacao',
+                  'empresa_nome', 'empresa_id', 'colaborador_nome', 'colaborador_id', 'marca', 'modelo', 'especificacoes', 'acesso_remoto',
                   'acesso_id', 'acesso_senha', 'observacao', 'data_cadastro', 'usuario_cadastro',
                   'data_ultima_alteracao', 'usuario_ultima_alteracao', 'status']
         read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
 
     def create(self, validated_data):
         user = self.context.get('request').user
-        equipamento = Equipamento.objects.create(usuario_cadastro=user, **validated_data)
+        tipo_equipamento_id = validated_data.pop('tipo_equipamento_id', None)
+        tipo_equipamento = None
+        empresa_id = validated_data.pop('empresa_id', None)
+        empresa = None
+        colaborador_id = validated_data.pop('colaborador_id', None)
+        colaborador = None
+
+        if colaborador_id:
+            # Usar o ID fornecido para obter o Colaborador
+            colaborador = Colaborador.objects.get(pk=colaborador_id)
+
+        if empresa_id:
+            # Usar o ID fornecido para obter a Empresa
+            empresa = Empresa.objects.get(pk=empresa_id)
+
+        if tipo_equipamento_id:
+            # Usar o ID fornecido para obter o TipoEquipamento
+            tipo_equipamento = TipoEquipamento.objects.get(pk=tipo_equipamento_id)
+        
+        equipamento = Equipamento.objects.create(
+            usuario_cadastro=user,
+            tipo_equipamento=tipo_equipamento,
+            empresa=empresa,
+            colaborador=colaborador,
+            **validated_data
+        )
         return equipamento
 
     def to_representation(self, instance):

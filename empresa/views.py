@@ -2,9 +2,11 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db.models import Q
 from .models import Empresa
 from .serializers import EmpresaSerializer, EmpresaStatusSerializer
-from equipamento.serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer
+from equipamento.serializers import EquipamentoSerializer
 from equipamento.models import Equipamento, TransferenciaEmpresa
 from users.views import has_permission_to_view_empresa, has_permission_to_detail_empresa, has_permission_to_edit_empresa
 
@@ -102,6 +104,8 @@ class EmpresaStatusUpdateView(APIView):
         
 
 class EmpresaTransferenciasView(APIView):
+    pagination_class = PageNumberPagination
+
     def get(self, request, pk):
         try:
             empresa = Empresa.objects.get(pk=pk)
@@ -110,71 +114,63 @@ class EmpresaTransferenciasView(APIView):
 
         if not has_permission_to_detail_empresa(request.user):
             return Response({'error': 'Usuário sem permissão para visualizar detalhes de uma empresa'}, status=status.HTTP_403_FORBIDDEN)
-
-        serializer = EmpresaSerializer(empresa)
-        equipamentos = Equipamento.objects.filter(empresa=empresa)
         
-        # Obtendo transferências de origem e destino, ordenando pela data de forma decrescente
-        transferencias_origem = TransferenciaEmpresa.objects.filter(empresa_origem=empresa).order_by('-data_transferencia')
-        transferencias_destino = TransferenciaEmpresa.objects.filter(empresa_destino=empresa).order_by('-data_transferencia')
+        # Acessando o valor do 'page size' na consulta
+        page_size = request.query_params.get('page_size')
+        
+        # Obtendo todas as transferencias relacionadas à empresa, ordenando por data decrescente
+        transferencias = TransferenciaEmpresa.objects.filter(
+            Q(empresa_origem=empresa) | Q(empresa_destino=empresa)
+        ).order_by('-data_transferencia')
+
+        # Criando uma instancia de Paginator para as transferencias
+        paginator = self.pagination_class()
+
+        # Ajuste para aplicar o page_size
+        if page_size:
+            paginator.page_size = int(page_size)
+
+        # Pegando o número da página a partir dos parâmetros da solicitação
+        page = request.query_params.get('page', 1)
+
+        try:
+            # Obtendo a página solicitada
+            transferencias_page = paginator.paginate_queryset(transferencias, request)
+        except Exception as e:
+            # Lidar com erros de paginação, se necessário
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         # Formatando informações das transferências
         transferencias_data = []
 
-        for transferencia_origem in transferencias_origem:
-            usuario_transferencia = transferencia_origem.usuario_transferencia_empresa
+        for transferencia in transferencias_page:
+            usuario_transferencia = transferencia.usuario_transferencia_empresa
 
             # Obtendo informações adicionais do equipamento
-            equipamento = Equipamento.objects.get(pk=transferencia_origem.equipamento.pk)
+            equipamento = Equipamento.objects.get(pk=transferencia.equipamento.pk)
             tag_patrimonio = equipamento.tag_patrimonio
             tipo_equipamento_nome = equipamento.tipo_equipamento.tipo
 
-            # Verificando se a empresa de origem é igual à empresa que estamos visualizando
-            if transferencia_origem.empresa_origem == empresa:
-                outra_empresa = transferencia_origem.empresa_destino
+            if transferencia.empresa_origem == empresa:
+                outra_empresa = transferencia.empresa_destino
             else:
-                outra_empresa = transferencia_origem.empresa_origem
+                outra_empresa = transferencia.empresa_origem
 
             transferencia_data = {
                 "empresa_origem_nome": outra_empresa.nome,
                 "empresa_destino_nome": empresa.nome,
                 "usuario_transferencia_nome": usuario_transferencia.username,
-                "data_transferencia": transferencia_origem.data_transferencia,
+                "data_transferencia": transferencia.data_transferencia,
                 "tag_patrimonio": tag_patrimonio,
                 "tipo_equipamento_nome": tipo_equipamento_nome,
             }
             transferencias_data.append(transferencia_data)
-
-        for transferencia_destino in transferencias_destino:
-            usuario_transferencia = transferencia_destino.usuario_transferencia_empresa
-
-            # Obtendo informações adicionais do equipamento
-            equipamento = Equipamento.objects.get(pk=transferencia_destino.equipamento.pk)
-            tag_patrimonio = equipamento.tag_patrimonio
-            tipo_equipamento_nome = equipamento.tipo_equipamento.tipo
-
-            # Verificando se a empresa de destino é igual à empresa que estamos visualizando
-            if transferencia_destino.empresa_destino == empresa:
-                outra_empresa = transferencia_destino.empresa_origem
-            else:
-                outra_empresa = transferencia_destino.empresa_destino
-
-            transferencia_data = {
-                "empresa_origem_nome": empresa.nome,
-                "empresa_destino_nome": outra_empresa.nome,
-                "usuario_transferencia_nome": usuario_transferencia.username,
-                "data_transferencia": transferencia_destino.data_transferencia,
-                "tag_patrimonio": tag_patrimonio,
-                "tipo_equipamento_nome": tipo_equipamento_nome,
-            }
-            transferencias_data.append(transferencia_data)
-
-        equipamento_serializer = EquipamentoSerializer(equipamentos, many=True)
 
         data = {
-            "empresa": serializer.data,
-            "equipamentos": equipamento_serializer.data,
-            "transferencias": transferencias_data,
+            "count": paginator.page.paginator.count,
+            "next": paginator.get_next_link(),
+            "previous": paginator.get_previous_link(),
+            "results": transferencias_data,
         }
 
         return Response(data, status=status.HTTP_200_OK)

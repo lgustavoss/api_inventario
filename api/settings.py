@@ -149,6 +149,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,  # Defina o número de itens por página usado como global no projeto.
+    'MAX_PAGE_SIZE': 100,  # Defina o número máximo de itens por página permitido.
     # Definindo o modelo de autenticação de usuários
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
