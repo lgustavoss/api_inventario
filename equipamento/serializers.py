@@ -49,7 +49,7 @@ class AlteracaoSituacaoSerializer(serializers.ModelSerializer):
 class EquipamentoSerializer(serializers.ModelSerializer):
 
     empresa_nome = serializers.CharField(source='empresa.nome', read_only=True)
-    empresa_id = serializers.IntegerField(write_only=True)
+    empresa_id = serializers.IntegerField(source='empresa.id', write_only=True)
     colaborador_nome = serializers.CharField(source='colaborador.nome', read_only=True)
     colaborador_id = serializers.IntegerField(write_only=True)
     tipo_equipamento_nome = serializers.CharField(source='tipo_equipamento.tipo', read_only=True)
@@ -95,6 +95,7 @@ class EquipamentoSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        representation['empresa_id'] = instance.empresa.id if instance.empresa else None
         return representation
 
     def update(self, instance, validated_data):

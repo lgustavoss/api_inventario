@@ -34,6 +34,8 @@ class Empresa(models.Model):
         # Ordenando as empresas pelo nome por padrão
         ordering = ['nome']
     
+    related_name = "empresas"
+    
     pass
 
 # Método para criar as permissões após as migrações
