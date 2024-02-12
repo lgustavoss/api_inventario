@@ -44,7 +44,12 @@ class CreateUserSerializer(serializers.ModelSerializer):
             user.save()
         
         return user
-        
+
+class UserListSerializer(serializers.ModelSerializer):
+    model = User
+    fields = {'id', 'username'}
+
+
 class UserSerializer(serializers.ModelSerializer):
     grupos = GrupoSerializer(many=True, read_only=True, source='groups')
     is_admin = serializers.SerializerMethodField()

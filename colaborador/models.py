@@ -32,7 +32,7 @@ class Colaborador(models.Model):
 
     class Meta:
         # Ordenando os colaboradores pelo nome por padrão
-        ordering = ['nome']
+        ordering = ['id']
 
 
 # Método para criar as permissões após as migrações

@@ -1,8 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
-from .serializers import TipoEquipamentoSerializer
+from .serializers import TipoEquipamentoSerializer, TipoEquipamentoListSerializer
 from .models import TipoEquipamento
 from equipamento.serializers import EquipamentoSerializer
 from equipamento.models import Equipamento
@@ -13,9 +12,17 @@ class TipoEquipamentoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para manipulação dos tipos de equipamentos
     """
-    queryset = TipoEquipamento.objects.all()
-    serializer_class = TipoEquipamentoSerializer
-    pagination_class = PageNumberPagination
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return TipoEquipamentoListSerializer
+        return TipoEquipamentoSerializer
+    
+    def get_queryset(self):
+        queryset = TipoEquipamento.objects.all()
+        # Filtre o queryset de acordo com as permissões do usuario
+        if not has_permission_to_view_tipo_equipamento(self.request.user):
+            return TipoEquipamento.objects.none()
+        return queryset
 
     def list(self, request, *args, **kwargs):
         """

@@ -4,7 +4,7 @@ from .views import ColaboradorViewSet, ColaboradorStatusUpdateView
 
 #Objeto DefaultRouter para configurar as rotas automaticamente
 router = DefaultRouter()
-router.register(r'', ColaboradorViewSet) # 'colaborador' é o nome da rota
+router.register(r'', ColaboradorViewSet, basename='colaborador') # 'colaborador' é o nome da rota
 
 #urls
 urlpatterns = [

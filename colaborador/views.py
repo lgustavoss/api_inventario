@@ -1,22 +1,29 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
 from .models import Colaborador
-from .serializers import ColaboradorSerializer, ColaboradorStatusSerializer
+from .serializers import ColaboradorSerializer, ColaboradorStatusSerializer, ColaboradorListSerializer
 from equipamento.serializers import EquipamentoSerializer
 from equipamento.models import Equipamento
-from users.views import has_permission_to_view_colaborador, has_permission_to_detail_colaborador, has_permission_to_edit_colaborador
+from users.views import has_permission_to_view_colaborador, has_permission_to_detail_colaborador, has_permission_to_edit_colaborador, has_permission_to_view_equipamento
 
 
-# 
+
 class ColaboradorViewSet(viewsets.ModelViewSet):
     """
     ViewSet para manipulação de Colaboradores.
     """
-    queryset = Colaborador.objects.all()
-    serializer_class = ColaboradorSerializer
-    pagination_class = PageNumberPagination
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ColaboradorListSerializer
+        return ColaboradorSerializer
+    
+    def get_queryset(self):
+        queryset = Colaborador.objects.all()
+        # Filtre o queryset de acordo com as permissões do usuario
+        if not has_permission_to_view_colaborador(self.request.user):
+            return Colaborador.objects.none()
+        return queryset
 
     def list(self, request, *args, **kwargs):
         """
@@ -70,11 +77,17 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         """
         if has_permission_to_detail_colaborador(request.user):
             instance = self.get_object()
-            equipamentos = Equipamento.objects.filter(colaborador=instance)
-            serializer = self.get_serializer(instance)
-            data = serializer.data
-            data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
-            return Response(data)
+            # Verifica se o usuário tem permissão para ver os equipamentos
+            if has_permission_to_view_equipamento(request.user):
+                equipamentos = Equipamento.objects.filter(colaborador=instance)
+                serializer = self.get_serializer(instance)
+                data = serializer.data
+                data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
+                return Response(data)
+            else:
+                # Se não tiver permissão para ver equipamentos, retorne apenas o colaborador
+                serializer = self.get_serializer(instance)
+                return Response(serializer.data)
         else:
             return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
 

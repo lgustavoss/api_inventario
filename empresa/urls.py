@@ -5,7 +5,7 @@ from .views import EmpresaViewSet, EmpresaStatusUpdateView, EmpresaTransferencia
 
 #Objetivo DefaultRouter para configurar rotas automaticamente
 router = DefaultRouter()
-router.register(r'', EmpresaViewSet) # 'empresa' é o nome da rota
+router.register(r'', EmpresaViewSet, basename='empresa') # 'empresa' é o nome da rota
 
 #urls
 urlpatterns = [

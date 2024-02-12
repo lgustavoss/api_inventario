@@ -2,12 +2,35 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import TipoEquipamento
 from equipamento.serializers import EquipamentoSerializer
+from django.contrib.auth.models import User
+
+
+# Serializdor para listagem de  todos os tipos de equipamentos
+class TipoEquipamentoListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoEquipamento
+        fields = ['id', 'tipo', 'status']
+
 
 
 # Serializador para detalhes dos tipos de equipamentos
 class TipoEquipamentoSerializer(serializers.ModelSerializer):
     # Relacionamento com Equipamentos (somente leitura)
     equipamentos = EquipamentoSerializer(many=True, read_only=True)
+
+    # Metodos para obter o username do usuario
+    def get_usuario_cadastro(self, obj):
+        user = User.objects.get(id=obj.usuario_cadastro.id)
+        return {"id": user.id, "username": user.username}
+    
+    def get_usuario_ultima_alteracao(self, obj):
+        if obj.usuario_ultima_alteracao is not None:
+            user = User.objects.get(id=obj.usuario_ultima_alteracao.id)
+            return {"id": user.id, "username": user.username}
+        return None
+    
+    usuario_cadastro = serializers.SerializerMethodField('get_usuario_cadastro')
+    usuario_ultima_alteracao = serializers.SerializerMethodField('get_usuario_ultima_alteracao')
 
     class Meta:
         model = TipoEquipamento

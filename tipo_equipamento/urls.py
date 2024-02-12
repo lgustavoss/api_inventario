@@ -4,7 +4,7 @@ from .views import TipoEquipamentoViewSet, TipoEquipamentoStatusUpdateView
 
 #Objeto DefaultRouter para configurar as rotas automaticamente
 router = DefaultRouter()
-router.register(r'', TipoEquipamentoViewSet) # 'tipo_equipamento' é o nome da rota
+router.register(r'', TipoEquipamentoViewSet, basename='tipo_equipamento') # 'tipo_equipamento' é o nome da rota
 
 #urls
 urlpatterns = [

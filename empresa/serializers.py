@@ -2,12 +2,33 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import Empresa
 from equipamento.serializers import EquipamentoSerializer
+from django.contrib.auth.models import User
 
+
+# Serializador para listagem de todas as empresas
+class EmpresaListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Empresa
+        fields = ['id', 'nome', 'cnpj', 'status']
 
 # Serializador para detalhes da Empresa
 class EmpresaSerializer(serializers.ModelSerializer):
     # Relacionamento com Equipamentos (somente leitura)
     equipamentos = EquipamentoSerializer(many=True, read_only=True)
+
+    # Metodos para obter o username do usuario
+    def get_usuario_cadastro(self, obj):
+        user = User.objects.get(id=obj.usuario_cadastro.id)
+        return {"id":user.id, "username": user.username}
+    
+    def get_usuario_ultima_alteracao(self, obj):
+        if obj.usuario_ultima_alteracao is not None:
+            user = User.objects.get(id=obj.usuario_ultima_alteracao.id)
+            return {"id": user.id, "username": user.username}
+        return None
+    
+    usuario_cadastro = serializers.SerializerMethodField('get_usuario_cadastro')
+    usuario_ultima_alteracao = serializers.SerializerMethodField('get_usuario_ultima_alteracao')
 
     class Meta:
         model = Empresa

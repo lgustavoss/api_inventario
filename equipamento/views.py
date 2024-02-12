@@ -2,23 +2,37 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
-from operator import itemgetter
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento ,SITUACAO_EQUIPAMENTO_CHOICES
-from .serializers import EquipamentoSerializer, TransferenciaEmpresaSerializer, TransferenciaColaboradorSerializer, HistoricoSituacaoEquipamentoSerializer
+from .serializers import EquipamentoSerializer, EquipamentoListSerializer, TransferenciaEmpresaSerializer, TransferenciaColaboradorSerializer, HistoricoSituacaoEquipamentoSerializer
 from empresa.models import Empresa
 from colaborador.models import Colaborador
 from users.views import has_permission_to_view_equipamento, has_permission_to_detail_equipamento, has_permission_to_edit_equipamento
 
 
 class EquipamentoViewSet(viewsets.ModelViewSet):
-    queryset = Equipamento.objects.all()
-    serializer_class = EquipamentoSerializer
-    pagination_class = PageNumberPagination
+    """
+    ViewSet para manipulação de Equipamentos.
+    """
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EquipamentoListSerializer
+        return EquipamentoSerializer
 
-    # Listagem de todos os equipamentos
+
+
+    def get_queryset(self):
+        queryset = Equipamento.objects.all()
+        # Filtre o queryset de acordo com as permissoes do usuario
+        if not has_permission_to_view_equipamento(self.request.user):
+            return Equipamento.objects.none()
+        return queryset
+
+    
     def list(self, request, *args, **kwargs):
+        """
+        Lista de todos os colaboradores com paginação opcional.
+        """
         #Acessando o valor do 'page size' na consulta
         page_size = request.query_params.get('page_size')
 
@@ -129,11 +143,6 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
             return Response(historico_serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Usuário sem permissão para editar um equipamento'}, status=status.HTTP_403_FORBIDDEN)
-
-    
-    # Escolher o serializador apropriado
-    def get_serializer_class(self):
-        return EquipamentoSerializer
 
 
 class EquipamentoTransferenciaEmpresaView(APIView):

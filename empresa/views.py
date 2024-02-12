@@ -2,10 +2,9 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q
 from .models import Empresa
-from .serializers import EmpresaSerializer, EmpresaStatusSerializer
+from .serializers import EmpresaSerializer, EmpresaListSerializer, EmpresaStatusSerializer
 from equipamento.serializers import EquipamentoSerializer
 from equipamento.models import Equipamento, TransferenciaEmpresa
 from users.views import has_permission_to_view_empresa, has_permission_to_detail_empresa, has_permission_to_edit_empresa
@@ -15,9 +14,17 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para manipulação de Empresas.
     """
-    queryset = Empresa.objects.all()
-    serializer_class = EmpresaSerializer
-    pagination_class = PageNumberPagination
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EmpresaListSerializer
+        return EmpresaSerializer
+    
+    def get_queryset(self):
+        queryset = Empresa.objects.all()
+        # Filtre o queryset de acordo com as permissões do usuario
+        if not has_permission_to_view_empresa(self.request.user):
+            return Empresa.objects.none()
+        return queryset
 
 
     def list(self, request, *args, **kwargs):
