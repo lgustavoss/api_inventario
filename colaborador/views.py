@@ -1,10 +1,8 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Colaborador
-from .serializers import ColaboradorSerializer, ColaboradorStatusSerializer, ColaboradorListSerializer
-from equipamento.serializers import EquipamentoSerializer
-from equipamento.models import Equipamento
+from .serializers import ColaboradorSerializer, ColaboradorStatusSerializer, ColaboradorListSerializer, EquipamentoColaboradorSerializer
 from users.views import has_permission_to_view_colaborador, has_permission_to_detail_colaborador, has_permission_to_edit_colaborador, has_permission_to_view_equipamento
 
 
@@ -60,7 +58,6 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
 
-
     def partial_update(self, request, *args, **kwargs):
         """
         Atualiza parcialmente um colaborador.
@@ -73,23 +70,14 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         """
-        Retorna os detalhes de um colaborador com os equipamentos associados.
+        Retorna os detalhes de um colaborador sem os equipamentos associados.
         """
         if has_permission_to_detail_colaborador(request.user):
             instance = self.get_object()
-            # Verifica se o usuário tem permissão para ver os equipamentos
-            if has_permission_to_view_equipamento(request.user):
-                equipamentos = Equipamento.objects.filter(colaborador=instance)
-                serializer = self.get_serializer(instance)
-                data = serializer.data
-                data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
-                return Response(data)
-            else:
-                # Se não tiver permissão para ver equipamentos, retorne apenas o colaborador
-                serializer = self.get_serializer(instance)
-                return Response(serializer.data)
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
         else:
-            return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Usuário sem permissão visualizar detalhes do colaborador'}, status=status.HTTP_403_FORBIDDEN)
 
 
 
@@ -111,3 +99,18 @@ class ColaboradorStatusUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
+        
+
+class EquipamentosColaboradorView(generics.ListAPIView):
+    serializer_class = EquipamentoColaboradorSerializer
+
+    def get_queryset(self):
+        colaborador_id = self.kwargs['pk']
+        queryset = Colaborador.objects.get(pk=colaborador_id).equipamento_set.all()
+
+        # Acessando o valor do page_size na consulta
+        page_size = self.request.query_params.get('page_size')
+        if page_size:
+            self.paginator.page_size = int(page_size)
+        
+        return queryset

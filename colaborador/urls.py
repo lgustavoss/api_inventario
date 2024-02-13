@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ColaboradorViewSet, ColaboradorStatusUpdateView
+from .views import ColaboradorViewSet, ColaboradorStatusUpdateView, EquipamentosColaboradorView
 
 #Objeto DefaultRouter para configurar as rotas automaticamente
 router = DefaultRouter()
@@ -13,4 +13,7 @@ urlpatterns = [
 
     # Rota para atualizar o status de um colaborador específico por PK
     path('<int:pk>/status/', ColaboradorStatusUpdateView.as_view(), name='colaborador-status-update'),
+
+    # Rota para listar os equipamentos de um colaborador especifico por PK
+    path('<int:pk>/equipamentos/', EquipamentosColaboradorView.as_view(), name='colaborador-equipamentos'),
 ]
