@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Empresa
-from equipamento.serializers import EquipamentoSerializer
 from django.contrib.auth.models import User
+from .models import Empresa
+from equipamento.models import Equipamento
+from equipamento.serializers import EquipamentoSerializer
+
 
 
 # Serializador para listagem de todas as empresas
@@ -13,13 +15,15 @@ class EmpresaListSerializer(serializers.ModelSerializer):
 
 # Serializador para detalhes da Empresa
 class EmpresaSerializer(serializers.ModelSerializer):
-    # Relacionamento com Equipamentos (somente leitura)
-    equipamentos = EquipamentoSerializer(many=True, read_only=True)
+    class Meta:
+        model = Empresa
+        fields = ['id', 'nome', 'cnpj', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao']
+        read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
 
     # Metodos para obter o username do usuario
     def get_usuario_cadastro(self, obj):
         user = User.objects.get(id=obj.usuario_cadastro.id)
-        return {"id":user.id, "username": user.username}
+        return {"id": user.id, "username": user.username}
     
     def get_usuario_ultima_alteracao(self, obj):
         if obj.usuario_ultima_alteracao is not None:
@@ -27,13 +31,27 @@ class EmpresaSerializer(serializers.ModelSerializer):
             return {"id": user.id, "username": user.username}
         return None
     
-    usuario_cadastro = serializers.SerializerMethodField('get_usuario_cadastro')
-    usuario_ultima_alteracao = serializers.SerializerMethodField('get_usuario_ultima_alteracao')
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
 
-    class Meta:
-        model = Empresa
-        fields = ['id', 'nome', 'cnpj', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao', 'equipamentos']
-        read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
+        # Removendo as chaves existentes
+        representation.pop('usuario_cadastro', None)
+        representation.pop('usuario_ultima_alteracao', None)
+
+        # Adicionando as chaves personalizadas para usuario_cadastro
+        representation['usuario_cadastro_id'] = instance.usuario_cadastro.id
+        representation['usuario_cadastro_username'] = instance.usuario_cadastro.username
+
+        # Adicionando as chaves personalizadas para usuario_ultima_alteracao
+        if instance.usuario_ultima_alteracao:
+            representation['usuario_ultima_alteracao_id'] = instance.usuario_ultima_alteracao.id
+            representation['usuario_ultima_alteracao_username'] = instance.usuario_ultima_alteracao.username
+        else:
+            representation['usuario_ultima_alteracao_id'] = None
+            representation['usuario_ultima_alteracao_username'] = None
+
+        return representation
+
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -83,3 +101,25 @@ class EmpresaStatusSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("A empresa já possui esse status.")
         
         return instance
+    
+
+# Serializer para listar os equipamentos vinculados a uma empresa
+class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Equipamento
+        fields = ['id', 'tag_patrimonio','tipo_equipamento', 'colaborador', 'marca', 'modelo', 'situacao']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Removendo as chaves existentes
+        representation.pop('tipo_equipamento', None)
+        representation.pop('empresa', None)
+
+        # Adicionando as chaves personalizadas
+        representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
+        representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
+        representation['empresa_id'] = instance.empresa.id
+        representation['empresa_nome'] = instance.empresa.nome
+        
+        return representation

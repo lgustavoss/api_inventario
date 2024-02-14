@@ -16,14 +16,12 @@ class ColaboradorListSerializer(serializers.ModelSerializer):
 
 # Serializador para detalhes do Colaborador
 class ColaboradorSerializer(serializers.ModelSerializer):
-    # Relacionamento com Equipamentos (somente leitura)
-    equipamentos = EquipamentoSerializer(many=True, read_only=True)
-
     class Meta:
         model = Colaborador
-        fields = ['id', 'nome', 'cpf', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao', 'equipamentos']
+        fields = ['id', 'nome', 'cpf', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao']
         read_only_fields = ['data_ultima_ateracao', 'usuario_ultima_alteracao']
 
+    # Metodos para obter o username do usuario
     def get_usuario_cadastro(self, obj):
         user = User.objects.get(id=obj.usuario_cadastro.id)
         return {"id": user.id, "username": user.username}
@@ -41,11 +39,17 @@ class ColaboradorSerializer(serializers.ModelSerializer):
         representation.pop('usuario_cadastro', None)
         representation.pop('usuario_ultima_alteracao', None)
 
-        # Adicionando as chaves personalizadas
+        # Adicionando as chaves personalizadas para usuario_cadastro
         representation['usuario_cadastro_id'] = instance.usuario_cadastro.id
         representation['usuario_cadastro_username'] = instance.usuario_cadastro.username
-        representation['usuario_ultima_alteracao_id'] = instance.usuario_ultima_alteracao.id
-        representation['usuario_ultima_alteracao_username'] = instance.usuario_ultima_alteracao.username
+
+        # Adicionando as chaves personalizadas para usuario_ultima_alteracao
+        if instance.usuario_ultima_alteracao:
+            representation['usuario_ultima_alteracao_id'] = instance.usuario_ultima_alteracao.id
+            representation['usuario_ultima_alteracao_username'] = instance.usuario_ultima_alteracao.username
+        else:
+            representation['usuario_ultima_alteracao_id'] = None
+            representation['usuario_ultima_alteracao_username'] = None
 
         return representation
 
@@ -104,7 +108,7 @@ class ColaboradorStatusSerializer(serializers.ModelSerializer):
 class EquipamentoColaboradorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Equipamento
-        fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'empresa', 'marca', 'modelo']
+        fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'empresa', 'marca', 'modelo', 'situacao']
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)

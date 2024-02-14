@@ -106,11 +106,17 @@ class EquipamentosColaboradorView(generics.ListAPIView):
 
     def get_queryset(self):
         colaborador_id = self.kwargs['pk']
-        queryset = Colaborador.objects.get(pk=colaborador_id).equipamento_set.all()
+        colaborador = Colaborador.objects.get(pk=colaborador_id)
 
-        # Acessando o valor do page_size na consulta
-        page_size = self.request.query_params.get('page_size')
-        if page_size:
-            self.paginator.page_size = int(page_size)
+        # Verificando se o usuario tem permissao para visualizar equipamentos
+        if has_permission_to_view_equipamento(self.request.user):
+            queryset = colaborador.equipamento_set.all()
+
+            # Acessando o valor do page_size na consulta
+            page_size = self.request.query_params.get('page_size')
+            if page_size:
+                self.paginator.page_size = int(page_size)
         
-        return queryset
+            return queryset
+        else:
+            return Response({'error': 'Usuário sem permissão visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)

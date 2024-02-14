@@ -2,13 +2,13 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import ColaboradorViewSet, ColaboradorStatusUpdateView, EquipamentosColaboradorView
 
-#Objeto DefaultRouter para configurar as rotas automaticamente
+# Usando o DefaultRouter para configurar as rotas automaticamente
 router = DefaultRouter()
 router.register(r'', ColaboradorViewSet, basename='colaborador') # 'colaborador' é o nome da rota
 
-#urls
+# urls
 urlpatterns = [
-    #incluindo as rotas geradas pelo router
+    # Incluindo as rotas geradas pelo router
     path("", include(router.urls)),
 
     # Rota para atualizar o status de um colaborador específico por PK

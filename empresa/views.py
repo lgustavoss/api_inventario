@@ -1,13 +1,12 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from .models import Empresa
-from .serializers import EmpresaSerializer, EmpresaListSerializer, EmpresaStatusSerializer
-from equipamento.serializers import EquipamentoSerializer
+from .serializers import EmpresaSerializer, EmpresaListSerializer, EmpresaStatusSerializer, EquipamentoEmpresaSerializer
 from equipamento.models import Equipamento, TransferenciaEmpresa
-from users.views import has_permission_to_view_empresa, has_permission_to_detail_empresa, has_permission_to_edit_empresa
+from users.views import has_permission_to_view_empresa, has_permission_to_detail_empresa, has_permission_to_edit_empresa, has_permission_to_view_equipamento
 
 
 class EmpresaViewSet(viewsets.ModelViewSet):
@@ -76,15 +75,12 @@ class EmpresaViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         """
-        Retorna os detalhes de uma empresa com os equipamentos associados.
+        Retorna os detalhes de uma empresa semos equipamentos associados.
         """
         if has_permission_to_detail_empresa(request.user):
             instance = self.get_object()
-            equipamentos = Equipamento.objects.filter(empresa=instance)
             serializer = self.get_serializer(instance)
-            data = serializer.data
-            data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
-            return Response(data)
+            return Response(serializer.data)
         else:
             return Response({'error': 'Usuário sem permissão para visualizar os detalhes de uma empresa'}, status=status.HTTP_403_FORBIDDEN)
     
@@ -181,3 +177,22 @@ class EmpresaTransferenciasView(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
+class EquipamentosEmpresaView(generics.ListAPIView):
+    serializer_class = EquipamentoEmpresaSerializer
+
+    def get_queryset(self):
+        empresa_id = self.kwargs['pk']
+        empresa = Empresa.objects.get(pk=empresa_id)
+
+        # Verificando se o usuario tem permissao para visualizar equipamentos
+        if has_permission_to_view_equipamento(self.request.user):
+            queryset = empresa.equipamento_set.all()
+
+            # Acessando o valor do page_size na consulta
+            page_size = self.request.query_params.get('page_size')
+            if page_size:
+                self.paginator.page_size = int(page_size)
+            return queryset
+        else:
+            return Response({'error': 'Usuário sem permissão para visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
