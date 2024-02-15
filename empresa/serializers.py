@@ -3,8 +3,6 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from .models import Empresa
 from equipamento.models import Equipamento
-from equipamento.serializers import EquipamentoSerializer
-
 
 
 # Serializador para listagem de todas as empresas

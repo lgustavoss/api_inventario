@@ -28,7 +28,7 @@ class TipoEquipamento(models.Model):
     usuario_ultima_alteracao = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tipo_equipamento_alterados', null=True)
 
     class Meta:
-        ordering = ['tipo']
+        ordering = ['id']
 
 
 # Método para criar as permissões após as migrações
