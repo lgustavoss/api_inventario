@@ -9,25 +9,60 @@ from .models import Equipamento
 
 # Serializador para Transferência de Colaborador
 class TransferenciaColaboradorSerializer(serializers.ModelSerializer):
-    colaborador_origem_id = serializers.IntegerField(source='colaborador_origem.id')
-    colaborador_origem_nome = serializers.CharField(source='colaborador_origem.nome')
-    colaborador_destino_id = serializers.IntegerField(source='colaborador_destino.id')
-    colaborador_destino_nome = serializers.CharField(source='colaborador_destino.nome')
-    usuario_transferencia_colaborador_id = serializers.IntegerField(source='usuario_transferencia_colaborador.id')
-    usuario_transferencia_colaborador_nome = serializers.CharField(source='usuario_transferencia_colaborador.username')
+    colaborador_origem = serializers.PrimaryKeyRelatedField(queryset=Colaborador.objects.all())
+    usuario_transferencia_colaborador = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = TransferenciaColaborador
         fields = fields = [
             'id', 
-            'colaborador_origem_id', 
-            'colaborador_origem_nome', 
-            'colaborador_destino_id', 
-            'colaborador_destino_nome', 
-            'usuario_transferencia_colaborador_id', 
-            'usuario_transferencia_colaborador_nome', 
+            'colaborador_origem', 
+            'colaborador_destino', 
+            'usuario_transferencia_colaborador', 
             'data_transferencia', 
         ]
+
+    # Metodos para obter o username do usuario
+    def get_usuario_transferencia(self, obj):
+        user = User.objects.get(id=obj.usuario_transferencia.id)
+        return {'id': user.id, "username": user.username}
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Removendo chaves existentes
+        representation.pop('colaborador_origem')
+        representation.pop('colaborador_destino')
+        representation.pop('usuario_transferencia_colaborador')
+        
+        # Adicionando chaves personalizadas
+        representation['colaborador_origem_id'] = instance.colaborador_origem.id
+        representation['colaborador_origem_nome'] = instance.colaborador_origem.nome
+        representation['colaborador_destino_id'] = instance.colaborador_destino.id
+        representation['colaborador_destino_nome'] = instance.colaborador_destino.nome
+
+        # Adicionando chaves personalizadas do usuário
+        representation['usuario_transferencia_colaborador_id'] = instance.usuario_transferencia_colaborador.id
+        representation['usuario_transferencia_colaborador_username'] = instance.usuario_transferencia_colaborador.username
+
+        return representation
+    
+    def create(self, validated_data):
+        # Obtendo a colaborador atual do equipamento
+        equipamento = Equipamento.objects.get(pk=validated_data['equipamento'].id)
+        colaborador_origem = equipamento.colaborador
+
+        # Obtendo o usuario logado
+        usuario_transferencia_empresa = self.context['request'].user
+
+        # Atribuindo a empresa atual e o usuario loado aos campos
+        validated_data['colaborador_origem'] = colaborador_origem
+        validated_data['usuario_transferencia_empresa'] = usuario_transferencia_empresa
+
+        # Criando a nova transferencia da empresa
+        transferencia = TransferenciaEmpresa.objects.create(**validated_data)
+
+        return transferencia
 
 # Serializador para Transferência de Empresa
 class TransferenciaEmpresaSerializer(serializers.ModelSerializer):
@@ -45,10 +80,6 @@ class TransferenciaEmpresaSerializer(serializers.ModelSerializer):
         ]
 
     # Metodos para obter o username do usuario
-    def get_usuario_cadastro(self, obj):
-        user = User.objects.get(id=obj.usuario_cadastro.id)
-        return {"id": user.id, "username": user.username}
-    
     def get_usuario_ultima_alteracao(self, obj):
         if obj.usuario_ultima_alteracao is not None:
             user = User.objects.get(id=obj.usuario_ultima_alteracao.id)
@@ -70,12 +101,9 @@ class TransferenciaEmpresaSerializer(serializers.ModelSerializer):
         representation['empresa_destino_nome'] = instance.empresa_destino.nome
 
         # Adicionando chaves personalizadas do usuário
-        if instance.usuario_transferencia_empresa:
-            representation['usuario_transferencia_empresa_id'] = instance.usuario_transferencia_empresa.id
-            representation['usuario_transferencia_empresa_username'] = instance.usuario_transferencia_empresa.username
-        else:
-            representation['usuario_transferencia_empresa_id'] = None
-            representation['usuario_transferencia_empresa_username'] = None
+        representation['usuario_transferencia_empresa_id'] = instance.usuario_transferencia_empresa.id
+        representation['usuario_transferencia_empresa_username'] = instance.usuario_transferencia_empresa.username
+
 
         return representation
 
@@ -87,7 +115,7 @@ class TransferenciaEmpresaSerializer(serializers.ModelSerializer):
         # Obtendo o usuario logado
         usuario_transferencia_empresa = self.context['request'].user
 
-        # Atribuindo a empresa atual e o usuario loado aos campos
+        # Atribuindo a empresa atual e o usuario logado aos campos
         validated_data['empresa_origem'] = empresa_origem
         validated_data['usuario_transferencia_empresa'] = usuario_transferencia_empresa
 
@@ -96,30 +124,55 @@ class TransferenciaEmpresaSerializer(serializers.ModelSerializer):
 
         return transferencia
 
-# Serializador para Situação do Equipamento
+# Serializador para Alteracao de Situação do Equipamento
 class HistoricoSituacaoEquipamentoSerializer(serializers.ModelSerializer):
-    usuario_situacao_equipamento_id = serializers.IntegerField(source='usuario_situacao_equipamento.id')
-    usuario_situacao_equipamento_nome = serializers.CharField(source='usuario_situacao_equipamento.username')
+    usuario_situacao_equipamento = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = AlteracaiSituacaoEquipamento
         fields = [
             'id', 
-            'usuario_situacao_equipamento_id', 
-            'usuario_situacao_equipamento_nome', 
+            'usuario_situacao_equipamento', 
             'situacao_anterior', 
             'situacao_nova', 
-            'data_alteracao', 
-            'equipamento']
+            'data_alteracao',
+        ]
     
-
+    # Metodos para obter o username do usuario
+    def get_usuario_situacao_equipamento(self, obj):
+        if obj.usuario_situacao_equipamento is not None:
+            user = User.objects.get(id=obj.usuario_situacao_equipamento.id)
+            return {"id": user.id, "username": user.username}
+        return None
     
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
 
-# Serializador para Alteração de Situação do Equipamento
-class AlteracaoSituacaoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Equipamento
-        fields = ['situacao']
+        # Removendo chaves existentes
+        representation.pop('usuario_situacao_equipamento')
+
+        # Adicionando chaves personalizadas do usuário
+        representation['usuario_situacao_equipamento_id'] = instance.usuario_situacao_equipamento.id
+        representation['usuario_situacao_equipamento_username'] = instance.usuario_situacao_equipamento.username
+
+        return representation
+    
+    def create(self, validated_data):
+        # Obtendo a situacao atual do equipamento
+        equipamento = Equipamento.objects.get(pk=validated_data['equipamento'].id)
+        situacao_anterior = equipamento.situacao
+
+        # Obtendo o usuario logado
+        usuario_situacao_equipamento = self.context['request'].user
+
+        # Atribuindo a situacao atual e o usuario logado aos campos
+        validated_data['situacao_anterior'] = situacao_anterior
+        validated_data['usuario_situacao_equipamento'] = usuario_situacao_equipamento
+
+        # Criando a alteração de status
+        alteracao = AlteracaiSituacaoEquipamento.objects.create(**validated_data)
+
+        return alteracao
 
 # Serializador para listagem de todos os equipamentos
 class EquipamentoListSerializer(serializers.ModelSerializer):
@@ -238,4 +291,3 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
-    

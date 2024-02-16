@@ -74,41 +74,48 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
 
     def atualizar_situacao(self, request, pk=None):
         if has_permission_to_edit_equipamento(request.user):
-            equipamento = self.get_object()
+            equipamento = Equipamento.objects.get(pk=pk)
             nova_situacao = request.data.get('situacao_nova')
-            user = request.user.pk
-
+            
+            # Verifica se a situação nova foi informada
             if nova_situacao is None:
                 return Response({"error":"Você deve fornecer uma nova situação para atualização."},
                                 status=status.HTTP_400_BAD_REQUEST)
             
-            # Validando se a nova situação está entre as opções permitidas
+            # Verifica se a nova situação está entre as opções permitidas
             if nova_situacao not in dict(SITUACAO_EQUIPAMENTO_CHOICES).keys():
                 return Response({"error": "Nova situação inválida."},
                                 status=status.HTTP_400_BAD_REQUEST)
-
             
+            # Verifica se a situação nova é diferente da anterior
             if nova_situacao == equipamento.situacao:
                 return Response({"error": "A nova situação é igual a situação atual"}, 
                                 status=status.HTTP_400_BAD_REQUEST)
             
-            historico_serializer = HistoricoSituacaoEquipamentoSerializer(data={
-                'equipamento': equipamento.pk,
-                'situacao_anterior': equipamento.situacao,
-                'situacao_nova': nova_situacao,
-                'usuario_situacao_equipamento': user,
-                'data_alteracao': timezone.now(),
-            })
+            # Obtendo a situação atual do equipamento
+            situacao_anterior = equipamento.situacao
 
-            if historico_serializer.is_valid():
-                historico_serializer.save()
-            else:
-                return Response(historico_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Obtendo o usuario logado
+            usuario_situacao_equipamento = request.user
+            
+            # Adicionando situacao_anterior e o usuario_alteracao ao payload
+            request.data['situacao_anterior'] = situacao_anterior
+            request.data['usuario_situacao_equipamento'] = usuario_situacao_equipamento.id
 
-            equipamento.situacao = nova_situacao
-            equipamento.save()
+            # Criando o serializer
+            serializer = HistoricoSituacaoEquipamentoSerializer(data=request.data, context={'request': request})
 
-            return Response(historico_serializer.data, status=status.HTTP_200_OK)
+            if serializer.is_valid():
+                # Salvando a alteracao
+                alteracao = serializer.save(
+                    equipamento=equipamento,
+                )
+                # Atualizando o equiamento com a nova situacao
+                situacao_nova = nova_situacao
+                equipamento.situacao = situacao_nova
+                equipamento.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para editar um equipamento'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -161,7 +168,6 @@ class EquipamentoTransferenciaEmpresaView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para editar um equipamento'}, status=status.HTTP_403_FORBIDDEN)
-
 
 class EquipamentoTransferenciaColaboradorView(APIView):
     def post(self, request, pk):
@@ -225,6 +231,15 @@ class EquipamentoHistoricoView(EquipamentoViewSet):
                 transferencias_colaborador_serializer.data +
                 alteracao_situacao_serializer.data
             )
+
+            # Adicionando um campo indicando o tipo de transferência
+            for item in historico:
+                if 'empresa_origem_nome' in item:
+                    item['tipo_transferencia'] = 'Transferência entre Empresas'
+                elif 'colaborador_origem_nome' in item:
+                    item['tipo_transferencia'] = 'Transferência entre Colaboradores'
+                else:
+                    item['tipo_transferencia'] = 'Alteração de Situação'
 
             # Ordenando historico pela 'data_transferencia ou data_alteracao' mais recente primeiro
             historico_ordenado = sorted(historico, key=lambda x: x.get('data_transferencia', x.get('data_alteracao')), reverse=True)
