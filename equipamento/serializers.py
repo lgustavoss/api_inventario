@@ -1,42 +1,119 @@
 from rest_framework import serializers
+from django.contrib.auth.models import User
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento
 from empresa.models import Empresa
 from colaborador.models import Colaborador
 from tipo_equipamento.models import TipoEquipamento
-from django.contrib.auth.models import User
+from .models import Equipamento
 
 
 # Serializador para Transferência de Colaborador
 class TransferenciaColaboradorSerializer(serializers.ModelSerializer):
-    colaborador_origem = serializers.PrimaryKeyRelatedField(queryset=Colaborador.objects.all())
-    colaborador_destino = serializers.PrimaryKeyRelatedField(queryset=Colaborador.objects.all())
+    colaborador_origem_id = serializers.IntegerField(source='colaborador_origem.id')
+    colaborador_origem_nome = serializers.CharField(source='colaborador_origem.nome')
+    colaborador_destino_id = serializers.IntegerField(source='colaborador_destino.id')
+    colaborador_destino_nome = serializers.CharField(source='colaborador_destino.nome')
+    usuario_transferencia_colaborador_id = serializers.IntegerField(source='usuario_transferencia_colaborador.id')
+    usuario_transferencia_colaborador_nome = serializers.CharField(source='usuario_transferencia_colaborador.username')
 
     class Meta:
         model = TransferenciaColaborador
-        fields = ('colaborador_origem', 'colaborador_destino', 'data_transferencia', 'usuario_transferencia_colaborador')
-        extra_kwargs = {
-            'usuario_transferencia_colaborador': {'required': False}
-        }
-
+        fields = fields = [
+            'id', 
+            'colaborador_origem_id', 
+            'colaborador_origem_nome', 
+            'colaborador_destino_id', 
+            'colaborador_destino_nome', 
+            'usuario_transferencia_colaborador_id', 
+            'usuario_transferencia_colaborador_nome', 
+            'data_transferencia', 
+        ]
 
 # Serializador para Transferência de Empresa
 class TransferenciaEmpresaSerializer(serializers.ModelSerializer):
     empresa_origem = serializers.PrimaryKeyRelatedField(queryset=Empresa.objects.all())
-    empresa_destino = serializers.PrimaryKeyRelatedField(queryset=Empresa.objects.all())
+    usuario_transferencia_empresa = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = TransferenciaEmpresa
-        fields = ('empresa_origem', 'empresa_destino', 'data_transferencia', 'usuario_transferencia_empresa')
-        extra_kwargs = {
-            'usuario_transferencia_empresa': {'required': False}
-        }
+        fields = [
+            'id',
+            'empresa_origem',
+            'empresa_destino',
+            'usuario_transferencia_empresa',
+            'data_transferencia'
+        ]
 
+    # Metodos para obter o username do usuario
+    def get_usuario_cadastro(self, obj):
+        user = User.objects.get(id=obj.usuario_cadastro.id)
+        return {"id": user.id, "username": user.username}
+    
+    def get_usuario_ultima_alteracao(self, obj):
+        if obj.usuario_ultima_alteracao is not None:
+            user = User.objects.get(id=obj.usuario_ultima_alteracao.id)
+            return {"id": user.id, "username": user.username}
+        return None
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Removendo chaves existentes
+        representation.pop('empresa_origem')
+        representation.pop('empresa_destino')
+        representation.pop('usuario_transferencia_empresa')
+        
+        # Adicionando as chaves personalizadas
+        representation['empresa_origem_id'] = instance.empresa_origem.id
+        representation['empresa_origem_nome'] = instance.empresa_origem.nome
+        representation['empresa_destino_id'] = instance.empresa_destino.id
+        representation['empresa_destino_nome'] = instance.empresa_destino.nome
+
+        # Adicionando chaves personalizadas do usuário
+        if instance.usuario_transferencia_empresa:
+            representation['usuario_transferencia_empresa_id'] = instance.usuario_transferencia_empresa.id
+            representation['usuario_transferencia_empresa_username'] = instance.usuario_transferencia_empresa.username
+        else:
+            representation['usuario_transferencia_empresa_id'] = None
+            representation['usuario_transferencia_empresa_username'] = None
+
+        return representation
+
+    def create(self, validated_data):
+        # Obtendo a empresa atual do equipamento
+        equipamento = Equipamento.objects.get(pk=validated_data['equipamento'].id)
+        empresa_origem = equipamento.empresa
+
+        # Obtendo o usuario logado
+        usuario_transferencia_empresa = self.context['request'].user
+
+        # Atribuindo a empresa atual e o usuario loado aos campos
+        validated_data['empresa_origem'] = empresa_origem
+        validated_data['usuario_transferencia_empresa'] = usuario_transferencia_empresa
+
+        # Criando a nova transferencia da empresa
+        transferencia = TransferenciaEmpresa.objects.create(**validated_data)
+
+        return transferencia
+
+# Serializador para Situação do Equipamento
 class HistoricoSituacaoEquipamentoSerializer(serializers.ModelSerializer):
+    usuario_situacao_equipamento_id = serializers.IntegerField(source='usuario_situacao_equipamento.id')
+    usuario_situacao_equipamento_nome = serializers.CharField(source='usuario_situacao_equipamento.username')
+
     class Meta:
         model = AlteracaiSituacaoEquipamento
-        fields = ('situacao_anterior', 'situacao_nova', 'data_alteracao', 'equipamento', 'usuario_situacao_equipamento')
+        fields = [
+            'id', 
+            'usuario_situacao_equipamento_id', 
+            'usuario_situacao_equipamento_nome', 
+            'situacao_anterior', 
+            'situacao_nova', 
+            'data_alteracao', 
+            'equipamento']
+    
 
+    
 
 # Serializador para Alteração de Situação do Equipamento
 class AlteracaoSituacaoSerializer(serializers.ModelSerializer):
@@ -44,50 +121,40 @@ class AlteracaoSituacaoSerializer(serializers.ModelSerializer):
         model = Equipamento
         fields = ['situacao']
 
-
 # Serializador para listagem de todos os equipamentos
 class EquipamentoListSerializer(serializers.ModelSerializer):
-    # Metodo para obter id e nome do tipo de equipamento
-    def get_tipo_equipamento(self, obj):
-        tipo_equipamento = TipoEquipamento.objects.get(id=obj.tipo_equipamento.id)
-        return {"id": tipo_equipamento.id, "tipo": tipo_equipamento.tipo}
-    
-    # Metodo para obter id e nome da empresa
-    def get_empresa(self, obj):
-        empresa = Empresa.objects.get(id=obj.empresa.id)
-        return {"id": empresa.id, "nome": empresa.nome}
-    
-    # Metodo para obter id e nome do colaborador
-    def get_colaborador(selg, obj):
-        colaborador = Colaborador.objects.get(id=obj.colaborador.id)
-        return {"id": colaborador.id, "nome": colaborador.nome}
-
-    tipo_equipamento = serializers.SerializerMethodField('get_tipo_equipamento')
-    empresa = serializers.SerializerMethodField('get_empresa')
-    colaborador = serializers.SerializerMethodField('get_colaborador')
-
     class Meta:
         model = Equipamento
         fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'situacao', 'marca', 'modelo', 'empresa', 'colaborador', 'status']
 
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Removendo chaves existentes
+        representation.pop('tipo_equipamento', None)
+        representation.pop('empresa', None)
+        representation.pop('colaborador', None)
+
+        # Adicionando as chaves personalizadas
+        representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
+        representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
+        representation['empresa_id'] = instance.empresa.id
+        representation['empresa_nome'] = instance.empresa.nome
+        representation['colaborador_id'] = instance.colaborador.id
+        representation['colaborador_nome'] = instance.colaborador.nome
+
+        return representation
+
 # Serializador principal para Equipamento
 class EquipamentoSerializer(serializers.ModelSerializer):
-
-    # Metodo para obter id e nome do tipo de equipamento
-    def get_tipo_equipamento(self, obj):
-        tipo_equipamento = TipoEquipamento.objects.get(id=obj.tipo_equipamento.id)
-        return {"id": tipo_equipamento.id, "tipo": tipo_equipamento.tipo}
-    
-    # Metodo para obter id e nome da empresa
-    def get_empresa(self, obj):
-        empresa = Empresa.objects.get(id=obj.empresa.id)
-        return {"id": empresa.id, "nome": empresa.nome}
-    
-    # Metodo para obter id e nome do colaborador
-    def get_colaborador(selg, obj):
-        colaborador = Colaborador.objects.get(id=obj.colaborador.id)
-        return {"id": colaborador.id, "nome": colaborador.nome}
+    class Meta:
+        model = Equipamento
+        fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'pedido', 'data_compra', 'situacao',
+                  'empresa', 'colaborador', 'marca', 'modelo', 'especificacoes', 'acesso_remoto',
+                  'acesso_id', 'acesso_senha', 'observacao', 'data_cadastro', 'usuario_cadastro',
+                  'data_ultima_alteracao', 'usuario_ultima_alteracao', 'status']
+        read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
     
     # Metodos para obter o username do usuario
     def get_usuario_cadastro(self, obj):
@@ -99,20 +166,38 @@ class EquipamentoSerializer(serializers.ModelSerializer):
             user = User.objects.get(id=obj.usuario_ultima_alteracao.id)
             return {"id": user.id, "username": user.username}
         return None
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
 
-    tipo_equipamento = serializers.SerializerMethodField('get_tipo_equipamento')
-    empresa = serializers.SerializerMethodField('get_empresa')
-    colaborador = serializers.SerializerMethodField('get_colaborador')
-    usuario_cadastro = serializers.SerializerMethodField('get_usuario_cadastro')
-    usuario_ultima_alteracao = serializers.SerializerMethodField('get_usuario_ultima_alteracao')
+        # Removendo as chaves existentes
+        representation.pop('usuario_cadastro', None)
+        representation.pop('usuario_ultima_alteracao', None)
+        representation.pop('tipo_equipamento', None)
+        representation.pop('empresa', None)
+        representation.pop('colaborador', None)
 
-    class Meta:
-        model = Equipamento
-        fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'pedido', 'data_compra', 'situacao',
-                  'empresa', 'colaborador', 'marca', 'modelo', 'especificacoes', 'acesso_remoto',
-                  'acesso_id', 'acesso_senha', 'observacao', 'data_cadastro', 'usuario_cadastro',
-                  'data_ultima_alteracao', 'usuario_ultima_alteracao', 'status']
-        read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
+        # Adicionando chaves personalizdas para tipo de equipamento, empresa e colaborador
+        representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
+        representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
+        representation['empresa_id'] = instance.empresa.id
+        representation['empresa_nome'] = instance.empresa.nome
+        representation['colaborador_id'] = instance.colaborador.id
+        representation['colaborador_nome'] = instance.colaborador.nome
+
+        # Adicionando as chaves personalizadas para usuario_cadastro
+        representation['usuario_cadastro_id'] = instance.usuario_cadastro.id
+        representation['usuario_cadastro_username'] = instance.usuario_cadastro.username
+
+        # Adicionando as chaves personalizadas para usuario_ultima_alteracao
+        if instance.usuario_ultima_alteracao:
+            representation['usuario_ultima_alteracao_id'] = instance.usuario_ultima_alteracao.id
+            representation['usuario_ultima_alteracao_username'] = instance.usuario_ultima_alteracao.username
+        else:
+            representation['usuario_ultima_alteracao_id'] = None
+            representation['usuario_ultima_alteracao_username'] = None
+
+        return representation
 
     def create(self, validated_data):
         user = self.context.get('request').user
@@ -144,13 +229,6 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         )
         return equipamento
 
-    
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['empresa_id'] = instance.empresa.id if instance.empresa else None
-        return representation
-    
-
     def update(self, instance, validated_data):
         campos_nao_editaveis = ['tag_patrimonio', 'empresa', 'colaborador', 'situacao']
 
@@ -160,3 +238,4 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
+    

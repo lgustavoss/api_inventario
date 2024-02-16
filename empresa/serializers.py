@@ -100,7 +100,6 @@ class EmpresaStatusSerializer(serializers.ModelSerializer):
         
         return instance
     
-
 # Serializer para listar os equipamentos vinculados a uma empresa
 class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -112,12 +111,12 @@ class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
 
         # Removendo as chaves existentes
         representation.pop('tipo_equipamento', None)
-        representation.pop('empresa', None)
+        representation.pop('colaborador', None)
 
         # Adicionando as chaves personalizadas
         representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
         representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
-        representation['empresa_id'] = instance.empresa.id
-        representation['empresa_nome'] = instance.empresa.nome
+        representation['colaborador_id'] = instance.colaborador.id
+        representation['colaborador_nome'] = instance.colaborador.nome
         
         return representation

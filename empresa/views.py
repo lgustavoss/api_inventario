@@ -74,9 +74,7 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     
 
     def retrieve(self, request, *args, **kwargs):
-        """
-        Retorna os detalhes de uma empresa semos equipamentos associados.
-        """
+        # Retorna os detalhes de uma empresa semos equipamentos associados.
         if has_permission_to_detail_empresa(request.user):
             instance = self.get_object()
             serializer = self.get_serializer(instance)
