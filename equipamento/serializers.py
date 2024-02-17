@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.utils import timezone
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento
 from empresa.models import Empresa
 from colaborador.models import Colaborador
@@ -254,40 +255,25 @@ class EquipamentoSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context.get('request').user
-        tipo_equipamento_id = validated_data.pop('tipo_equipamento_id', None)
-        tipo_equipamento = None
-        empresa_id = validated_data.pop('empresa_id', None)
-        empresa = None
-        colaborador_id = validated_data.pop('colaborador_id', None)
-        colaborador = None
-
-        if colaborador_id:
-            # Usar o ID fornecido para obter o Colaborador
-            colaborador = Colaborador.objects.get(pk=colaborador_id)
-
-        if empresa_id:
-            # Usar o ID fornecido para obter a Empresa
-            empresa = Empresa.objects.get(pk=empresa_id)
-
-        if tipo_equipamento_id:
-            # Usar o ID fornecido para obter o TipoEquipamento
-            tipo_equipamento = TipoEquipamento.objects.get(pk=tipo_equipamento_id)
-        
         equipamento = Equipamento.objects.create(
             usuario_cadastro=user,
-            tipo_equipamento=tipo_equipamento,
-            empresa=empresa,
-            colaborador=colaborador,
             **validated_data
         )
         return equipamento
 
     def update(self, instance, validated_data):
-        campos_nao_editaveis = ['tag_patrimonio', 'empresa', 'colaborador', 'situacao']
+        user = self.context.get('request').user
 
+        # Atualizando campos editaveis
+        campos_nao_editaveis = ['tag_patrimonio', 'empresa', 'colaborador', 'situacao']
         for campo, valor in validated_data.items():
             if campo not in campos_nao_editaveis:
                 setattr(instance, campo, valor)
         
-        instance.save()
+        # Atualizando data e usuario da ultima alteracao
+        instance.data_ultima_alteracao = timezone.now()
+        instance.usuario_ultima_alteracao = user
+
+        # Salvando a instancia
+        instance.save(update_fields=['data_ultima_alteracao', 'usuario_ultima_alteracao'])
         return instance

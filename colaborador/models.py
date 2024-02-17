@@ -31,7 +31,7 @@ class Colaborador(models.Model):
     usuario_ultima_alteracao = models.ForeignKey(User, on_delete = models.SET_NULL, related_name='colaboradores_alterados', null=True)
 
     class Meta:
-        # Ordenando os colaboradores pelo nome por padrão
+        # Ordenando os colaboradores pelo id por padrão
         ordering = ['id']
 
 
