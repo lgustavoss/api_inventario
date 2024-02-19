@@ -1,22 +1,27 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
 from .models import Colaborador
-from .serializers import ColaboradorSerializer, ColaboradorStatusSerializer
-from equipamento.serializers import EquipamentoSerializer
-from equipamento.models import Equipamento
-from users.views import has_permission_to_view_colaborador, has_permission_to_detail_colaborador, has_permission_to_edit_colaborador
+from .serializers import ColaboradorSerializer, ColaboradorStatusSerializer, ColaboradorListSerializer, EquipamentoColaboradorSerializer
+from users.views import has_permission_to_view_colaborador, has_permission_to_detail_colaborador, has_permission_to_edit_colaborador, has_permission_to_view_equipamento
 
 
-# 
+
 class ColaboradorViewSet(viewsets.ModelViewSet):
     """
     ViewSet para manipulação de Colaboradores.
     """
-    queryset = Colaborador.objects.all()
-    serializer_class = ColaboradorSerializer
-    pagination_class = PageNumberPagination
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ColaboradorListSerializer
+        return ColaboradorSerializer
+    
+    def get_queryset(self):
+        queryset = Colaborador.objects.all()
+        # Filtre o queryset de acordo com as permissões do usuario
+        if not has_permission_to_view_colaborador(self.request.user):
+            return Colaborador.objects.none()
+        return queryset
 
     def list(self, request, *args, **kwargs):
         """
@@ -53,7 +58,6 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
 
-
     def partial_update(self, request, *args, **kwargs):
         """
         Atualiza parcialmente um colaborador.
@@ -66,17 +70,14 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         """
-        Retorna os detalhes de um colaborador com os equipamentos associados.
+        Retorna os detalhes de um colaborador sem os equipamentos associados.
         """
         if has_permission_to_detail_colaborador(request.user):
             instance = self.get_object()
-            equipamentos = Equipamento.objects.filter(colaborador=instance)
             serializer = self.get_serializer(instance)
-            data = serializer.data
-            data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
-            return Response(data)
+            return Response(serializer.data)
         else:
-            return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Usuário sem permissão visualizar detalhes do colaborador'}, status=status.HTTP_403_FORBIDDEN)
 
 
 
@@ -98,3 +99,24 @@ class ColaboradorStatusUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para editar colaborador'}, status=status.HTTP_403_FORBIDDEN)
+        
+
+class EquipamentosColaboradorView(generics.ListAPIView):
+    serializer_class = EquipamentoColaboradorSerializer
+
+    def get_queryset(self):
+        colaborador_id = self.kwargs['pk']
+        colaborador = Colaborador.objects.get(pk=colaborador_id)
+
+        # Verificando se o usuario tem permissao para visualizar equipamentos
+        if has_permission_to_view_equipamento(self.request.user):
+            queryset = colaborador.equipamento_set.all()
+
+            # Acessando o valor do page_size na consulta
+            page_size = self.request.query_params.get('page_size')
+            if page_size:
+                self.paginator.page_size = int(page_size)
+        
+            return queryset
+        else:
+            return Response({'error': 'Usuário sem permissão visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)

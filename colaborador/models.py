@@ -25,14 +25,14 @@ class Colaborador(models.Model):
     usuario_cadastro = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='colaboradores_criados', null=True)
 
     # Data da ultima alteração do colaborador
-    data_ultima_ateracao = models.DateTimeField(null=True, default=None)
+    data_ultima_alteracao = models.DateTimeField(null=True, default=None)
 
     # Usuário que realizou a ultima alteração no colaborador
     usuario_ultima_alteracao = models.ForeignKey(User, on_delete = models.SET_NULL, related_name='colaboradores_alterados', null=True)
 
     class Meta:
-        # Ordenando os colaboradores pelo nome por padrão
-        ordering = ['nome']
+        # Ordenando os colaboradores pelo id por padrão
+        ordering = ['id']
 
 
 # Método para criar as permissões após as migrações

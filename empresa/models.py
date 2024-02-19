@@ -32,7 +32,9 @@ class Empresa(models.Model):
 
     class Meta:
         # Ordenando as empresas pelo nome por padrão
-        ordering = ['nome']
+        ordering = ['id']
+    
+    related_name = "empresas"
     
     pass
 

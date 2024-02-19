@@ -53,6 +53,9 @@ class Equipamento(models.Model):
     def __str__(self):
         return self.tag_patrimonio
     
+    class Meta:
+        # Ordenando os colaboradores pelo tag_patrimonio por padrão
+        ordering = ['tag_patrimonio']
 
 
 class TransferenciaEmpresa(models.Model):

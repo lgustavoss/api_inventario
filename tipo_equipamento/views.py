@@ -1,21 +1,31 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
-from .serializers import TipoEquipamentoSerializer
+from .serializers import TipoEquipamentoSerializer, TipoEquipamentoListSerializer, EquipamentoTipoEquipamentoSerializer
 from .models import TipoEquipamento
-from equipamento.serializers import EquipamentoSerializer
-from equipamento.models import Equipamento
-from users.views import has_permission_to_view_tipo_equipamento, has_permission_to_detail_tipo_equipamento, has_permission_to_edit_tipo_equipamento
+from users.views import (
+    has_permission_to_view_tipo_equipamento,
+    has_permission_to_detail_tipo_equipamento,
+    has_permission_to_edit_tipo_equipamento, 
+    has_permission_to_view_equipamento
+)
 
 
 class TipoEquipamentoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para manipulação dos tipos de equipamentos
     """
-    queryset = TipoEquipamento.objects.all()
-    serializer_class = TipoEquipamentoSerializer
-    pagination_class = PageNumberPagination
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return TipoEquipamentoListSerializer
+        return TipoEquipamentoSerializer
+    
+    def get_queryset(self):
+        queryset = TipoEquipamento.objects.all()
+        # Filtre o queryset de acordo com as permissões do usuario
+        if not has_permission_to_view_tipo_equipamento(self.request.user):
+            return TipoEquipamento.objects.none()
+        return queryset
 
     def list(self, request, *args, **kwargs):
         """
@@ -70,11 +80,8 @@ class TipoEquipamentoViewSet(viewsets.ModelViewSet):
         """
         if has_permission_to_detail_tipo_equipamento(request.user):
             instance = self.get_object()
-            equipamentos = Equipamento.objects.filter(tipo_equipamento=instance)
             serializer = self.get_serializer(instance)
-            data = serializer.data
-            data['equipamentos'] = EquipamentoSerializer(equipamentos, many=True).data
-            return Response(data)
+            return Response(serializer.data)
         else:
             return Response({'error': 'Usuário sem permissão para visualizar detalhes dos tipos de equipamento'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -98,4 +105,21 @@ class TipoEquipamentoStatusUpdateView(APIView):
         else:
             return Response({'error': 'Usuário sem permissão para alterar o status do tipo de equipamento'}, status=status.HTTP_403_FORBIDDEN)
 
-    
+class EquipamentoTipoEquipamentoView(generics.ListAPIView):
+    serializer_class = EquipamentoTipoEquipamentoSerializer
+
+    def get_queryset(self):
+        tipo_equipamento_id = self.kwargs['pk']
+        tipo_equipamento = TipoEquipamento.objects.get(pk=tipo_equipamento_id)
+
+        # Verificando se o usuario tem permissão para visualizar os equipamentos
+        if has_permission_to_view_equipamento(self.request.user):
+            queryset = tipo_equipamento.equipamento_set.all()
+
+            # Acessando o valor do page_size na consulta
+            page_size = self.request.query_params.get('page_size')
+            if page_size:
+                self.paginator.page_size = int(page_size)
+            return queryset
+        else:
+            return Response({'error': 'Usuário sem permissão para visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)

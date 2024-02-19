@@ -1,18 +1,55 @@
 from rest_framework import serializers
 from django.utils import timezone
+from django.contrib.auth.models import User
 from .models import Empresa
-from equipamento.serializers import EquipamentoSerializer
+from equipamento.models import Equipamento
 
+
+# Serializador para listagem de todas as empresas
+class EmpresaListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Empresa
+        fields = ['id', 'nome', 'cnpj', 'status']
 
 # Serializador para detalhes da Empresa
 class EmpresaSerializer(serializers.ModelSerializer):
-    # Relacionamento com Equipamentos (somente leitura)
-    equipamentos = EquipamentoSerializer(many=True, read_only=True)
-
     class Meta:
         model = Empresa
-        fields = ['id', 'nome', 'cnpj', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao', 'equipamentos']
+        fields = ['id', 'nome', 'cnpj', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao']
         read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
+
+    # Metodos para obter o username do usuario
+    def get_usuario_cadastro(self, obj):
+        user = User.objects.get(id=obj.usuario_cadastro.id)
+        return {"id": user.id, "username": user.username}
+    
+    def get_usuario_ultima_alteracao(self, obj):
+        if obj.usuario_ultima_alteracao is not None:
+            user = User.objects.get(id=obj.usuario_ultima_alteracao.id)
+            return {"id": user.id, "username": user.username}
+        return None
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Removendo as chaves existentes
+        representation.pop('usuario_cadastro', None)
+        representation.pop('usuario_ultima_alteracao', None)
+
+        # Adicionando as chaves personalizadas para usuario_cadastro
+        representation['usuario_cadastro_id'] = instance.usuario_cadastro.id
+        representation['usuario_cadastro_username'] = instance.usuario_cadastro.username
+
+        # Adicionando as chaves personalizadas para usuario_ultima_alteracao
+        if instance.usuario_ultima_alteracao:
+            representation['usuario_ultima_alteracao_id'] = instance.usuario_ultima_alteracao.id
+            representation['usuario_ultima_alteracao_username'] = instance.usuario_ultima_alteracao.username
+        else:
+            representation['usuario_ultima_alteracao_id'] = None
+            representation['usuario_ultima_alteracao_username'] = None
+
+        return representation
+
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -62,3 +99,24 @@ class EmpresaStatusSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("A empresa já possui esse status.")
         
         return instance
+    
+# Serializer para listar os equipamentos vinculados a uma empresa
+class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Equipamento
+        fields = ['id', 'tag_patrimonio','tipo_equipamento', 'colaborador', 'marca', 'modelo', 'situacao']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Removendo as chaves existentes
+        representation.pop('tipo_equipamento', None)
+        representation.pop('colaborador', None)
+
+        # Adicionando as chaves personalizadas
+        representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
+        representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
+        representation['colaborador_id'] = instance.colaborador.id
+        representation['colaborador_nome'] = instance.colaborador.nome
+        
+        return representation
