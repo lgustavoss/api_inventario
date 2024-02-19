@@ -174,24 +174,26 @@ class EquipamentoTransferenciaColaboradorView(APIView):
         if has_permission_to_edit_equipamento(request.user):
             equipamento = Equipamento.objects.get(pk=pk)
 
-            # Obtendo o colaborador atual do equipamento
-            colaborador_origem_padrao = equipamento.colaborador
-
-            # Definindo o valor padrão para o colaborador de origem na transferencia
-            request.data['colaborador_origem'] = colaborador_origem_padrao.id
-
             novo_colaborador_id = request.data.get('colaborador_destino')
 
             # Verificando se o colaborador de origem é diferente do colaborador de destino
-            if novo_colaborador_id == colaborador_origem_padrao.id:
+            if novo_colaborador_id == equipamento.colaborador.id:
                 return Response({"error":"O colaborador e destino é o mesmo que o colaborador atual do equipamento"},
                                 status=status.HTTP_400_BAD_REQUEST)
             
-            # Atribuindo o usuário antes de criar o serializer
-            request.data['usuario_transferencia_colaborador'] = request.user.pk
+            # Obtendo o colaborador de origem do equipamento
+            colaborador_origem = equipamento.colaborador
 
+            # Obtendo o usuario logado
+            usuario_transferencia_colaborador = request.user
+
+            # Adicionando o colaborador_origem e o usuario_transferencia_colaborador ao payload
+            request.data['colaborador_origem'] = colaborador_origem.id
+            request.data['usuario_transferencia_colaborador'] = usuario_transferencia_colaborador.id
+            
             # Criando o serializer            
-            serializer = TransferenciaColaboradorSerializer(data=request.data)
+            serializer = TransferenciaColaboradorSerializer(data=request.data, context={'request': request})
+
             
             if serializer.is_valid():
                 # Salvar a transferencia
@@ -206,6 +208,7 @@ class EquipamentoTransferenciaColaboradorView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para editar um equipamento'}, status=status.HTTP_403_FORBIDDEN)
+
 
 class EquipamentoHistoricoView(EquipamentoViewSet):
     @action(detail=True, methods=['get'])
