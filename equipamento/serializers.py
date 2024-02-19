@@ -15,7 +15,7 @@ class TransferenciaColaboradorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransferenciaColaborador
-        fields = fields = [
+        fields = [
             'id', 
             'colaborador_origem', 
             'colaborador_destino', 
@@ -23,10 +23,12 @@ class TransferenciaColaboradorSerializer(serializers.ModelSerializer):
             'data_transferencia', 
         ]
 
-    # Metodos para obter o username do usuario
-    def get_usuario_transferencia(self, obj):
-        user = User.objects.get(id=obj.usuario_transferencia.id)
-        return {'id': user.id, "username": user.username}
+    # Métodos para obter o username do usuário
+    def get_usuario_ultima_alteracao(self, obj):
+        if obj.usuario_ultima_alteracao is not None:
+            user = User.objects.get(id=obj.usuario_ultima_alteracao.id)
+            return {"id": user.id, "username": user.username}
+        return None
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -49,19 +51,19 @@ class TransferenciaColaboradorSerializer(serializers.ModelSerializer):
         return representation
     
     def create(self, validated_data):
-        # Obtendo a colaborador atual do equipamento
+        # Obtendo o colaborador atual do equipamento
         equipamento = Equipamento.objects.get(pk=validated_data['equipamento'].id)
         colaborador_origem = equipamento.colaborador
 
-        # Obtendo o usuario logado
-        usuario_transferencia_empresa = self.context['request'].user
+        # Obtendo o usuário logado a partir do contexto da solicitação
+        usuario_transferencia_colaborador = self.context['request'].user
 
-        # Atribuindo a empresa atual e o usuario loado aos campos
+        # Atribuindo o colaborador de origem e o usuário logado aos campos
         validated_data['colaborador_origem'] = colaborador_origem
-        validated_data['usuario_transferencia_empresa'] = usuario_transferencia_empresa
+        validated_data['usuario_transferencia_colaborador'] = usuario_transferencia_colaborador
 
-        # Criando a nova transferencia da empresa
-        transferencia = TransferenciaEmpresa.objects.create(**validated_data)
+        # Criando a nova transferência da empresa
+        transferencia = TransferenciaColaborador.objects.create(**validated_data)
 
         return transferencia
 
