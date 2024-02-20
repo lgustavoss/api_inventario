@@ -26,4 +26,5 @@ urlpatterns = [
     path('equipamento/', include('equipamento.urls')), #chamando a rota de urls de equipamento
     path('usuario/', include('users.urls')), #chamando a rota de urls de usuarios
     path('dashboard/', include('dashboard.urls')), #chamando a rota do dashboard
+    path('setor/', include('setor.urls')), #chamando a rota do setor
 ]

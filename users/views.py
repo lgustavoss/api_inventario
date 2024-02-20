@@ -268,3 +268,25 @@ def has_permission_to_edit_equipamento(user):
     
     # Se houver algum grupo com permissão, o usuário pode editar uma equipamento
     return grupos_com_permissao.exists()
+
+
+def has_permission_to_view_setor(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_setor', user=user)
+
+    # Se houver algum grupo com permisão, o usuário pode visualizar setor
+    return grupos_com_permissao.exists()
+
+def has_permission_to_detail_setor(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualiza_detalhe_setor', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode visualizar detalhes de uma setor
+    return grupos_com_permissao.exists()
+
+def has_permission_to_edit_setor(user):
+    # Verificar se o usuário está associado a grupos que tenham a permissão adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='editar_setor', user=user)
+    
+    # Se houver algum grupo com permissão, o usuário pode editar uma setor
+    return grupos_com_permissao.exists()

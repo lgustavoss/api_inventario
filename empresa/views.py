@@ -1,11 +1,8 @@
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
-from django.db.models import Q
 from .models import Empresa
 from .serializers import EmpresaSerializer, EmpresaListSerializer, EmpresaStatusSerializer, EquipamentoEmpresaSerializer
-from equipamento.models import Equipamento, TransferenciaEmpresa
 from users.views import has_permission_to_view_empresa, has_permission_to_detail_empresa, has_permission_to_edit_empresa, has_permission_to_view_equipamento
 
 
