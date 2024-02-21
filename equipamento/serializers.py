@@ -309,7 +309,6 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         # Atualizando data e usuario da ultima alteracao
         instance.data_ultima_alteracao = timezone.now()
         instance.usuario_ultima_alteracao = user
-        instance.setor = setor
 
         # Salvando a instancia
         instance.save(update_fields=['data_ultima_alteracao', 'usuario_ultima_alteracao'])
