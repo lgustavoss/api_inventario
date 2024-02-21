@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth.models import User
 from .models import Setor
+from equipamento.models import Equipamento
 
 
 # Serializador para listagem de todos os setores
@@ -97,3 +98,32 @@ class SetorStatusSerializer(serializers.ModelSerializer):
             
             return instance
 
+# Serializer para listar os equipamentos vinculados a uma empresa
+class EquipamentoSetorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Equipamento
+        fields = fields = ['id', 'tag_patrimonio','tipo_equipamento', 'colaborador', 'empresa', 'marca', 'modelo', 'situacao']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Removendo as chaves existentes
+        representation.pop('tipo_equipamento', None)
+        representation.pop('colaborador', None)
+        representation.pop('empresa', None)
+
+        # Adicionando as chaves personalizadas
+        representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
+        representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
+        representation['empresa_id'] = instance.empresa.id
+        representation['empresa_nome'] = instance.empresa.nome
+
+        # Adicionando chaves personalizadas para colaborador
+        if instance.colaborador:
+            representation['colaborador_id'] = instance.colaborador.id
+            representation['colaborador_nome'] = instance.colaborador.nome
+        else:
+            representation['colaborador_id'] = None
+            representation['colaborador_nome'] = None
+        
+        return representation

@@ -104,7 +104,7 @@ class EmpresaStatusSerializer(serializers.ModelSerializer):
 class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Equipamento
-        fields = ['id', 'tag_patrimonio','tipo_equipamento', 'colaborador', 'marca', 'modelo', 'situacao']
+        fields = ['id', 'tag_patrimonio','tipo_equipamento', 'colaborador', 'setor', 'marca', 'modelo', 'situacao']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -116,7 +116,22 @@ class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
         # Adicionando as chaves personalizadas
         representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
         representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
-        representation['colaborador_id'] = instance.colaborador.id
-        representation['colaborador_nome'] = instance.colaborador.nome
+
+        # Adicionando chaves personalizadas para colaborador
+        if instance.colaborador:
+            representation['colaborador_id'] = instance.colaborador.id
+            representation['colaborador_nome'] = instance.colaborador.nome
+        else:
+            representation['colaborador_id'] = None
+            representation['colaborador_nome'] = None
+
+
+        # Adicionando chaves personalizadas para setor
+        if instance.setor:
+            representation['setor_id'] = instance.setor.id
+            representation['setor_nome'] = instance.setor.nome
+        else:
+            representation['setor_id'] = None
+            representation['setor_nome'] = None
         
         return representation

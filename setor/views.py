@@ -1,9 +1,9 @@
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import SetorListSerializer, SetorSerializer, SetorStatusSerializer
+from .serializers import SetorListSerializer, SetorSerializer, SetorStatusSerializer, EquipamentoSetorSerializer
 from .models import Setor
-from users.views import has_permission_to_detail_setor, has_permission_to_edit_setor, has_permission_to_view_setor
+from users.views import has_permission_to_detail_setor, has_permission_to_edit_setor, has_permission_to_view_setor, has_permission_to_view_equipamento
 
 
 class SetorViewSet(viewsets.ModelViewSet):
@@ -86,3 +86,25 @@ class SetorStatusView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para alterar status de um setor'}, status=status.HTTP_403_FORBIDDEN)
+        
+class EquipamentosSetorView(APIView):
+    serializer_class = EquipamentoSetorSerializer
+
+    def get(self, request, *args, **kwargs):
+        setor_id = self.kwargs['pk']
+        setor = Setor.objects.get(pk=setor_id)
+
+        # Verificando se o usuario tem permissão para visualizar equipamentos
+        if has_permission_to_view_equipamento(self.request.user):
+            queryset = setor.equipamento_set.all()
+
+            # Acessando o valor do page_size na consulta
+            page_size = self.request.query_params.get('page_size')
+            if page_size:
+                self.paginator.page_size = int(page_size)
+            
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'Usuário sem permissão para visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
+    

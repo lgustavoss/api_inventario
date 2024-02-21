@@ -79,7 +79,6 @@ class EmpresaViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para visualizar os detalhes de uma empresa'}, status=status.HTTP_403_FORBIDDEN)
     
-
 class EmpresaStatusUpdateView(APIView):
     """
     View para atualizar o status de uma empresa.
