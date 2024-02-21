@@ -5,8 +5,9 @@ from django.contrib.contenttypes.models import ContentType
 from empresa.models import Empresa
 from colaborador.models import Colaborador
 from tipo_equipamento.models import TipoEquipamento
+from setor.models import Setor
 
-# Create your models here.
+# Choices para situação de equipamento
 SITUACAO_EQUIPAMENTO_CHOICES = (
     ('0', 'Novo'),
     ('1', 'Em operação'),
@@ -29,7 +30,10 @@ class Equipamento(models.Model):
     empresa = models.ForeignKey(
         Empresa, on_delete=models.PROTECT, limit_choices_to={'status': True})
     colaborador = models.ForeignKey(
-        Colaborador, on_delete=models.PROTECT, limit_choices_to={'status': True})
+        Colaborador, on_delete=models.PROTECT, limit_choices_to={'status': True}, blank=True, null=True)
+    setor = models.ForeignKey(
+        Setor, on_delete=models.PROTECT, limit_choices_to={'status': True}, blank=True, null=True
+    )
     marca = models.CharField(
         max_length=50)
     modelo = models.CharField(

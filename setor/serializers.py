@@ -56,8 +56,8 @@ class SetorSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         if 'status' in validated_data and validated_data['status'] == False:
-            # Verificando se o setor está vinculado a alguma empresa
-            if instance.empresa_set.exists():
+            # Verificando se o setor está vinculado a algum equipamento
+            if instance.equipamento_set.exists():
                 raise serializers.ValidationError("Não é permitido inativar um setor vinculado a uma empresa")
             
         user = self.context['request'].user
@@ -70,7 +70,7 @@ class SetorSerializer(serializers.ModelSerializer):
             instance.status = validated_data.get('status', instance.status)
             instance.usuario_ultima_alteracao = user
             instance.data_ultima_alteracao = timezone.now() #Define a data de alteração apenas se houver mudanças
-            instance.save
+            instance.save()
         
         return instance
     
