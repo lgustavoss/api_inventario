@@ -72,6 +72,7 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para editar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
 
+
     def atualizar_situacao(self, request, pk=None):
         if has_permission_to_edit_equipamento(request.user):
             equipamento = Equipamento.objects.get(pk=pk)

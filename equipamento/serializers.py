@@ -4,7 +4,7 @@ from django.utils import timezone
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento
 from empresa.models import Empresa
 from colaborador.models import Colaborador
-from tipo_equipamento.models import TipoEquipamento
+from setor.models import Setor
 from .models import Equipamento
 
 
@@ -311,5 +311,17 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         instance.usuario_ultima_alteracao = user
 
         # Salvando a instancia
-        instance.save(update_fields=['data_ultima_alteracao', 'usuario_ultima_alteracao'])
+        instance.save(update_fields=[
+            'data_ultima_alteracao', 
+            'usuario_ultima_alteracao', 
+            'setor', 
+            'pedido', 
+            'marca', 
+            'modelo',
+            'especificacoes',
+            'acesso_remoto',
+            "acesso_id",
+            'acesso_senha',
+            'observacao',
+        ])
         return instance
