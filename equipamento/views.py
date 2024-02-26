@@ -38,7 +38,7 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """
-        Lista de todos os colaboradores com paginação opcional.
+        Lista de todos os equiopamentos com paginação opcional.
         """
         #Acessando o valor do 'page size' na consulta
         page_size = request.query_params.get('page_size')
@@ -71,6 +71,7 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Usuário sem permissão para editar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
+
 
     def atualizar_situacao(self, request, pk=None):
         if has_permission_to_edit_equipamento(request.user):
@@ -208,7 +209,6 @@ class EquipamentoTransferenciaColaboradorView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Usuário sem permissão para editar um equipamento'}, status=status.HTTP_403_FORBIDDEN)
-
 
 class EquipamentoHistoricoView(EquipamentoViewSet):
     @action(detail=True, methods=['get'])
