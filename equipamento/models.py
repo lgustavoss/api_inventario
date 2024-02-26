@@ -30,7 +30,7 @@ class Equipamento(models.Model):
     empresa = models.ForeignKey(
         Empresa, on_delete=models.PROTECT, limit_choices_to={'status': True})
     colaborador = models.ForeignKey(
-        Colaborador, on_delete=models.PROTECT, limit_choices_to={'status': True}, blank=True, null=True)
+        Colaborador, on_delete=models.PROTECT, limit_choices_to={'status': True})
     setor = models.ForeignKey(
         Setor, on_delete=models.PROTECT, limit_choices_to={'status': True}, blank=True, null=True
     )
