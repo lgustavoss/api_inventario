@@ -1,9 +1,12 @@
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Count
 from .models import Empresa
+from equipamento.models import SITUACAO_EQUIPAMENTO_CHOICES
 from .serializers import EmpresaSerializer, EmpresaListSerializer, EmpresaStatusSerializer, EquipamentoEmpresaSerializer
 from users.views import has_permission_to_view_empresa, has_permission_to_detail_empresa, has_permission_to_edit_empresa, has_permission_to_view_equipamento
+
 
 
 class EmpresaViewSet(viewsets.ModelViewSet):
@@ -117,3 +120,70 @@ class EquipamentosEmpresaView(generics.ListAPIView):
             return queryset
         else:
             return Response({'error': 'Usuário sem permissão para visualizar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
+        
+class EquipamentoPorTipoView(APIView):
+    """
+    Retorna a quantidade de equipamentos por tipo de equipamento de uma empresa
+    """
+    def get(self, request, pk):
+        # Obtem a empresa com o id fornecido
+        empresa = Empresa.objects.get(pk=pk)
+
+        # Recupera a contagem de equipamentos por tipo de equipamento
+        equipamentos_por_tipo = empresa.equipamento_set.values('tipo_equipamento__tipo').annotate(total=Count('tipo_equipamento__tipo'))
+
+        # Formatando a resposta
+        responde_data = [
+            {'tipo': item['tipo_equipamento__tipo'], 'quantidade': item['total']} for item in equipamentos_por_tipo
+        ]
+
+        return Response(responde_data)
+
+class EquipamentoPorStatusView(APIView):
+    """
+    Retorna a quantidade de equipamentos em cada status de uma empresa.
+    """
+    def get(self, request, pk):
+        # Obtem a empresa com o id fornecido
+        empresa = Empresa.objects.get(pk=pk)
+
+        # Mapeando de status de numero para nome
+        status_map = dict(SITUACAO_EQUIPAMENTO_CHOICES)
+        
+        # Recupera a contagem de equipamentos por situação
+        equipamento_por_status = empresa.equipamento_set.values('situacao').annotate(total=Count('situacao'))
+
+        # Substitui valores numericos pelos nomes
+        for item in equipamento_por_status:
+            item['status'] = status_map.get(item['situacao'], 'Desconhecido')
+
+        # Formata a resposta
+        response_data = [
+            {'status': item['status'], 'quantidade': item['total']} for item in equipamento_por_status
+        ]
+
+        return Response(response_data)
+
+class EquipamentoPorSetorView(APIView):
+    """
+    Retorna a quantidade de equipamentos por setor de uma empresa
+    """
+    def get(self, request, pk):
+        # Obtém a empresa com o ID fornecido
+        empresa = Empresa.objects.get(pk=pk)
+        
+        # Recupera a contagem de equipamentos por setor, excluindo equipamentos com setor nulo
+        equipamentos_por_setor = empresa.equipamento_set.exclude(setor__isnull=True).values('setor__nome').annotate(total=Count('setor__nome'))
+        
+        # Conta os equipamentos sem setor
+        equipamentos_sem_setor = empresa.equipamento_set.filter(setor__isnull=True).count()
+        
+        # Adiciona os equipamentos sem setor à contagem
+        equipamentos_por_setor = list(equipamentos_por_setor)  # Converta para lista para ser mutável
+        equipamentos_por_setor.append({'setor__nome': 'Sem Setor', 'total': equipamentos_sem_setor})
+        
+        # Formata a resposta
+        response_data = [{'setor': item['setor__nome'] if item['setor__nome'] is not None else 'Sem Setor', 'quantidade': item['total']} for item in equipamentos_por_setor]
+        
+        return Response(response_data)
+

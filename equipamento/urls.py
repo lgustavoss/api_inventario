@@ -1,16 +1,22 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import EquipamentoViewSet, EquipamentoTransferenciaEmpresaView, EquipamentoTransferenciaColaboradorView, EquipamentoHistoricoView
-
-#Objeto DefaultRouter para configurar as rotas automaticamente
-router = DefaultRouter()
-router.register(r'', EquipamentoViewSet, basename='equipamento') #'equipamento' é o nome da rota
+from .views import (
+    EquipamentoViewSet,
+    EquipamentoTransferenciaEmpresaView,
+    EquipamentoTransferenciaColaboradorView,
+    EquipamentoHistoricoView,
+    EquipamentoListSimplesViewSet,
+)
 
 
 urlpatterns = [
-    path("", include(router.urls)), #incluindo as rotas geradas pelo router
+    # GET para listar, POST para criar
+    path('', EquipamentoViewSet.as_view({'get': 'list', 'post': 'create'}), name='equipamento-list'), 
+    # GET para recuperar, PUT para atualizar, DELETE para excluir 
+    path('<int:pk>/', EquipamentoViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='equipamento-detail'),  
     path('<int:pk>/transferencia_empresa/', EquipamentoTransferenciaEmpresaView.as_view(), name='equipamento_transferencia_empresa'),
     path('<int:pk>/transferencia_colaborador/', EquipamentoTransferenciaColaboradorView.as_view(), name='equipamento_transferencia_colaborador'),
     path('<int:pk>/atualizar_situacao/', EquipamentoViewSet.as_view({'put': 'atualizar_situacao'}), name='equipamento_atualizar_situacao'),
-    path('<int:pk>/historico/', EquipamentoHistoricoView.as_view({'get': 'historico'}), name='equipamento_historico')
+    path('<int:pk>/historico/', EquipamentoHistoricoView.as_view({'get': 'historico'}), name='equipamento_historico'),
+    path('listagem-simplificada/', EquipamentoListSimplesViewSet.as_view(), name='equipamento_listagem_simplificada'),
 ]

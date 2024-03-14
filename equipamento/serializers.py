@@ -325,3 +325,11 @@ class EquipamentoSerializer(serializers.ModelSerializer):
             'observacao',
         ])
         return instance
+
+class EquipamentoListSimplesSerializer(serializers.ModelSerializer):
+    """Serializer para listagem simplificada de Equipamentos."""
+
+    class Meta:
+        model = Equipamento
+        fields = ("id", "tag_patrimonio")
+
