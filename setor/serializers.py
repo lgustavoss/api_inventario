@@ -1,21 +1,21 @@
 from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth.models import User
-from .models import Empresa
+from .models import Setor
 from equipamento.models import Equipamento
 
 
-# Serializador para listagem de todas as empresas
-class EmpresaListSerializer(serializers.ModelSerializer):
+# Serializador para listagem de todos os setores
+class SetorListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Empresa
-        fields = ['id', 'nome', 'cnpj', 'status']
+        model = Setor
+        fields = ['id', 'nome', 'status']
 
-# Serializador para detalhes da Empresa
-class EmpresaSerializer(serializers.ModelSerializer):
+# Serializador para detalhes de um setor
+class SetorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Empresa
-        fields = ['id', 'nome', 'cnpj', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao']
+        model = Setor
+        fields = ['id', 'nome', 'status', 'data_cadastro', 'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao']
         read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
 
     # Metodos para obter o username do usuario
@@ -49,62 +49,60 @@ class EmpresaSerializer(serializers.ModelSerializer):
             representation['usuario_ultima_alteracao_username'] = None
 
         return representation
-
-
+    
     def create(self, validated_data):
         user = self.context['request'].user
-        empresa = Empresa.objects.create(usuario_cadastro=user, **validated_data)
-        return empresa
+        setor = Setor.objects.create(usuario_cadastro=user, **validated_data)
+        return setor
     
     def update(self, instance, validated_data):
         if 'status' in validated_data and validated_data['status'] == False:
-            #verifica se a empresa está vinculada a algum equipamento
+            # Verificando se o setor está vinculado a algum equipamento
             if instance.equipamento_set.exists():
-                raise serializers.ValidationError("Não é permitido inativar uma empresa que está vinculada a um equipamento")
-        
+                raise serializers.ValidationError("Não é permitido inativar um setor vinculado a uma empresa")
+            
         user = self.context['request'].user
 
-        # Verifica se houve alteração nos dados antes de atualizar
-        has_changed = any(field in validated_data for field in ['nome', 'cnpj', 'status'])
+        # Verifica se houve alteracao nos dados antes de atualizar
+        has_changed = any(field in validated_data for field in ['nome', 'status'])
 
         if has_changed:
             instance.nome = validated_data.get('nome', instance.nome)
-            instance.cnpj = validated_data.get('cnpj', instance.cnpj)
             instance.status = validated_data.get('status', instance.status)
             instance.usuario_ultima_alteracao = user
             instance.data_ultima_alteracao = timezone.now() #Define a data de alteração apenas se houver mudanças
-            instance.save
-        
-        return instance
-
-# Serializador para status da Empresa
-class EmpresaStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Empresa
-        fields = ['status']
-
-    def update(self, instance, validated_data):
-        user = self.context['request'].user
-        novo_status = validated_data.get('status')
-
-        #Verifica se o status foi alterado
-        if novo_status is not None and instance.status != novo_status:
-            if novo_status is False and instance.equipamento_set.exists():
-                raise serializers.ValidationError("Não é permitido inativar uma empresa que está vinculada a um equipamento")
-            instance.status = novo_status
-            instance.usuario_ultima_alteracao = user
-            instance.data_ultima_alteracao = timezone.now() # Define a data de alteração apenas se houver mudanças
             instance.save()
-        elif instance.status == novo_status:
-            raise serializers.ValidationError("A empresa já possui esse status.")
         
         return instance
     
+# Serializador para status do setor
+class SetorStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Setor
+        fields = ['status']
+    
+        def update(self, instance, validated_data):
+            user = self.context['request'].user
+            novo_status = validated_data.get('status')
+
+            #Verifica se o status foi alterado
+            if novo_status is not None and instance.status != novo_status:
+                if novo_status is False and instance.equipamento_set.exists():
+                    raise serializers.ValidationError("Não é permitido inativar um setor que está vinculada a uma empresa")
+                instance.status = novo_status
+                instance.usuario_ultima_alteracao = user
+                instance.data_ultima_alteracao = timezone.now() # Define a data de alteração apenas se houver mudanças
+                instance.save()
+            elif instance.status == novo_status:
+                raise serializers.ValidationError("O setor já possui esse status.")
+            
+            return instance
+
 # Serializer para listar os equipamentos vinculados a uma empresa
-class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
+class EquipamentoSetorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Equipamento
-        fields = ['id', 'tag_patrimonio','tipo_equipamento', 'colaborador', 'setor', 'marca', 'modelo', 'situacao']
+        fields = fields = ['id', 'tag_patrimonio','tipo_equipamento', 'colaborador', 'empresa', 'marca', 'modelo', 'situacao']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -112,10 +110,13 @@ class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
         # Removendo as chaves existentes
         representation.pop('tipo_equipamento', None)
         representation.pop('colaborador', None)
+        representation.pop('empresa', None)
 
         # Adicionando as chaves personalizadas
         representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
         representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
+        representation['empresa_id'] = instance.empresa.id
+        representation['empresa_nome'] = instance.empresa.nome
 
         # Adicionando chaves personalizadas para colaborador
         if instance.colaborador:
@@ -124,14 +125,5 @@ class EquipamentoEmpresaSerializer(serializers.ModelSerializer):
         else:
             representation['colaborador_id'] = None
             representation['colaborador_nome'] = None
-
-
-        # Adicionando chaves personalizadas para setor
-        if instance.setor:
-            representation['setor_id'] = instance.setor.id
-            representation['setor_nome'] = instance.setor.nome
-        else:
-            representation['setor_id'] = None
-            representation['setor_nome'] = None
         
         return representation

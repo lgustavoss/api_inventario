@@ -2,14 +2,14 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.utils import timezone
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento, SITUACAO_EQUIPAMENTO_CHOICES
 from .serializers import (
     EquipamentoSerializer, 
     EquipamentoListSerializer, 
     TransferenciaEmpresaSerializer, 
     TransferenciaColaboradorSerializer, 
-    HistoricoSituacaoEquipamentoSerializer
+    HistoricoSituacaoEquipamentoSerializer,
+    EquipamentoListSimplesSerializer,
 )
 from empresa.models import Empresa
 from colaborador.models import Colaborador
@@ -38,7 +38,7 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """
-        Lista de todos os colaboradores com paginação opcional.
+        Lista de todos os equiopamentos com paginação opcional.
         """
         #Acessando o valor do 'page size' na consulta
         page_size = request.query_params.get('page_size')
@@ -71,6 +71,7 @@ class EquipamentoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Usuário sem permissão para editar equipamentos'}, status=status.HTTP_403_FORBIDDEN)
+
 
     def atualizar_situacao(self, request, pk=None):
         if has_permission_to_edit_equipamento(request.user):
@@ -253,3 +254,15 @@ class EquipamentoHistoricoView(EquipamentoViewSet):
             return Response(response_data)
         else:
             return Response({'error': 'Usuario sem permissão para visualizar os detalhes de um equipamento'}, status=status.HTTP_403_FORBIDDEN)
+
+class EquipamentoListSimplesViewSet(APIView):
+    """ViewSet para listagem simplificada de Equipamentos."""
+
+    def get(self, request):
+        """View para listagem simplificada de Equipamentos."""
+
+        queryset = Equipamento.objects.all()
+        serializer = EquipamentoListSimplesSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+

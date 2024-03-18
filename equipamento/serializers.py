@@ -4,7 +4,7 @@ from django.utils import timezone
 from .models import Equipamento, TransferenciaEmpresa, TransferenciaColaborador, AlteracaiSituacaoEquipamento
 from empresa.models import Empresa
 from colaborador.models import Colaborador
-from tipo_equipamento.models import TipoEquipamento
+from setor.models import Setor
 from .models import Equipamento
 
 
@@ -181,7 +181,7 @@ class HistoricoSituacaoEquipamentoSerializer(serializers.ModelSerializer):
 class EquipamentoListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Equipamento
-        fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'situacao', 'marca', 'modelo', 'empresa', 'colaborador', 'status']
+        fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'situacao', 'marca', 'modelo', 'empresa', 'colaborador', 'setor', 'status']
 
 
     def to_representation(self, instance):
@@ -191,14 +191,30 @@ class EquipamentoListSerializer(serializers.ModelSerializer):
         representation.pop('tipo_equipamento', None)
         representation.pop('empresa', None)
         representation.pop('colaborador', None)
+        representation.pop('setor', None)
 
         # Adicionando as chaves personalizadas
         representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
         representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
         representation['empresa_id'] = instance.empresa.id
         representation['empresa_nome'] = instance.empresa.nome
-        representation['colaborador_id'] = instance.colaborador.id
-        representation['colaborador_nome'] = instance.colaborador.nome
+
+        # Adicionando as chaves personalizadas para colaborador
+        if instance.colaborador:
+            representation['colaborador_id'] = instance.colaborador.id
+            representation['colaborador_nome'] = instance.colaborador.nome
+
+        else:
+            representation['colaborador_id'] = None
+            representation['colaborador_nome'] = None
+
+        # Adicionando as chaves personalizadas para setor
+        if instance.setor:
+            representation['setor_id'] = instance.setor.id
+            representation['setor_nome'] = instance.setor.nome
+        else:
+            representation['setor_id'] = None
+            representation['setor_nome'] = None
 
         return representation
 
@@ -207,9 +223,9 @@ class EquipamentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Equipamento
         fields = ['id', 'tag_patrimonio', 'tipo_equipamento', 'pedido', 'data_compra', 'situacao',
-                  'empresa', 'colaborador', 'marca', 'modelo', 'especificacoes', 'acesso_remoto',
-                  'acesso_id', 'acesso_senha', 'observacao', 'data_cadastro', 'usuario_cadastro',
-                  'data_ultima_alteracao', 'usuario_ultima_alteracao', 'status']
+                  'empresa', 'colaborador', 'setor', 'marca', 'modelo', 'especificacoes', 
+                  'acesso_remoto', 'acesso_id', 'acesso_senha', 'observacao', 'data_cadastro',
+                  'usuario_cadastro', 'data_ultima_alteracao', 'usuario_ultima_alteracao', 'status']
         read_only_fields = ['data_ultima_alteracao', 'usuario_ultima_alteracao']
     
     # Metodos para obter o username do usuario
@@ -232,14 +248,30 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         representation.pop('tipo_equipamento', None)
         representation.pop('empresa', None)
         representation.pop('colaborador', None)
+        representation.pop('setor', None)
 
         # Adicionando chaves personalizdas para tipo de equipamento, empresa e colaborador
         representation['tipo_equipamento_id'] = instance.tipo_equipamento.id
         representation['tipo_equipamento_tipo'] = instance.tipo_equipamento.tipo
         representation['empresa_id'] = instance.empresa.id
         representation['empresa_nome'] = instance.empresa.nome
-        representation['colaborador_id'] = instance.colaborador.id
-        representation['colaborador_nome'] = instance.colaborador.nome
+        
+        # Adicionando as chaves personalizadas para colaborador
+        if instance.colaborador:
+            representation['colaborador_id'] = instance.colaborador.id
+            representation['colaborador_nome'] = instance.colaborador.nome
+
+        else:
+            representation['colaborador_id'] = None
+            representation['colaborador_nome'] = None
+
+        # Adicionando as chaves personalizadas para setor
+        if instance.setor:
+            representation['setor_id'] = instance.setor.id
+            representation['setor_nome'] = instance.setor.nome
+        else:
+            representation['setor_id'] = None
+            representation['setor_nome'] = None
 
         # Adicionando as chaves personalizadas para usuario_cadastro
         representation['usuario_cadastro_id'] = instance.usuario_cadastro.id
@@ -257,8 +289,10 @@ class EquipamentoSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context.get('request').user
+        setor = validated_data.pop('setor', None)
         equipamento = Equipamento.objects.create(
             usuario_cadastro=user,
+            setor=setor,
             **validated_data
         )
         return equipamento
@@ -277,5 +311,25 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         instance.usuario_ultima_alteracao = user
 
         # Salvando a instancia
-        instance.save(update_fields=['data_ultima_alteracao', 'usuario_ultima_alteracao'])
+        instance.save(update_fields=[
+            'data_ultima_alteracao', 
+            'usuario_ultima_alteracao', 
+            'setor', 
+            'pedido', 
+            'marca', 
+            'modelo',
+            'especificacoes',
+            'acesso_remoto',
+            "acesso_id",
+            'acesso_senha',
+            'observacao',
+        ])
         return instance
+
+class EquipamentoListSimplesSerializer(serializers.ModelSerializer):
+    """Serializer para listagem simplificada de Equipamentos."""
+
+    class Meta:
+        model = Equipamento
+        fields = ("id", "tag_patrimonio")
+

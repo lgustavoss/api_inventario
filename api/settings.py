@@ -57,7 +57,11 @@ INSTALLED_APPS = [
     'tipo_equipamento',
     'equipamento',
     'dashboard',
+<<<<<<< HEAD
     'suprimentos',
+=======
+    'setor',
+>>>>>>> 14-issue-dashboad-empresa
 ]
 
 MIDDLEWARE = [
