@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-from .config_dev import (
+from .config_prod import (
     conf_database,
     conf_debug,
     config_allowed_hosts,
