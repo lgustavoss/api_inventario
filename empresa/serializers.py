@@ -73,7 +73,7 @@ class EmpresaSerializer(serializers.ModelSerializer):
             instance.status = validated_data.get('status', instance.status)
             instance.usuario_ultima_alteracao = user
             instance.data_ultima_alteracao = timezone.now() #Define a data de alteração apenas se houver mudanças
-            instance.save
+            instance.save()
         
         return instance
 
