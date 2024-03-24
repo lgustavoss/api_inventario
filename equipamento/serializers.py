@@ -326,6 +326,7 @@ class EquipamentoSerializer(serializers.ModelSerializer):
         ])
         return instance
 
+# Serializador para listagem de id e tag de todos os equipamentos
 class EquipamentoListSimplesSerializer(serializers.ModelSerializer):
     """Serializer para listagem simplificada de Equipamentos."""
 
@@ -333,3 +334,9 @@ class EquipamentoListSimplesSerializer(serializers.ModelSerializer):
         model = Equipamento
         fields = ("id", "tag_patrimonio")
 
+
+# Serializador para listagem dos equipamentos e acesso remoto
+class EquipamentoAcessoSerialier(serializers.ModelSerializer):
+    class Meta:
+        model = Equipamento
+        fields = ("id", "tag_patrimonio", "empresa", "acesso_remoto", "acesso_id", "acesso_senha")

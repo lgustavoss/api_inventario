@@ -1,11 +1,12 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
 
 from .views import CategoriaViewSet
 
-router = DefaultRouter()
-router.register(r'categoria', CategoriaViewSet, basename='categoria') 
 
+# urls
 urlpatterns = [
-    path('', include(router.urls)),
+    # GET para listar, POST para criar
+    path('categorias/', CategoriaViewSet.as_view({'get': 'list', 'post': 'create'}), name='equipamento-list'), 
+    # GET para recuperar, PUT para atualizar, DELETE para excluir 
+    path('categorias/<int:pk>/', CategoriaViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='equipamento-detail'),  
 ]

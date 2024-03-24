@@ -10,6 +10,7 @@ from .serializers import (
     TransferenciaColaboradorSerializer, 
     HistoricoSituacaoEquipamentoSerializer,
     EquipamentoListSimplesSerializer,
+    EquipamentoAcessoSerialier,
 )
 from empresa.models import Empresa
 from colaborador.models import Colaborador
@@ -259,10 +260,13 @@ class EquipamentoListSimplesViewSet(APIView):
     """ViewSet para listagem simplificada de Equipamentos."""
 
     def get(self, request):
-        """View para listagem simplificada de Equipamentos."""
-
         queryset = Equipamento.objects.all()
         serializer = EquipamentoListSimplesSerializer(queryset, many=True)
         return Response(serializer.data)
 
-
+class EquipamentoAcessoViewSet(APIView):
+    """ViewSet para listagem dos equipamentos e dados de acesso remoto"""
+    def get(self, request):
+        queryset = Equipamento.objects.all()
+        serializer = EquipamentoAcessoSerialier(queryset, many=True)
+        return Response(serializer.data)
