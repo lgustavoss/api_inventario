@@ -311,4 +311,21 @@ def has_permission_to_edit_categoria(user):
 
     return grupos_com_permissao.exists()
 
+# Permissões de Item
+def has_permission_to_view_item(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_item', user=user)
 
+    return grupos_com_permissao.exists()
+
+def has_permission_to_detail_item(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualiza_detalhe_item', user=user)
+
+    return grupos_com_permissao.exists()
+
+def has_permission_to_edit_item(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='editar_item', user=user)
+
+    return grupos_com_permissao.exists()

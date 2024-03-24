@@ -1,8 +1,15 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from .serializers import CategoriaSerializer, CategoriaListSerializer
-from .models import Categoria
-from users.views import has_permission_to_detail_categoria, has_permission_to_edit_categoria, has_permission_to_view_categoria
+from .serializers import CategoriaSerializer, CategoriaListSerializer, ItemListSerializer, ItemSerializer
+from .models import Categoria, Item
+from users.views import (
+        has_permission_to_detail_categoria, 
+        has_permission_to_edit_categoria, 
+        has_permission_to_view_categoria,
+        has_permission_to_detail_item,
+        has_permission_to_edit_item,
+        has_permission_to_view_item,
+    )
 
 
 
@@ -69,7 +76,6 @@ class CategoriaViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para criar uma categoria'}, status=status.HTTP_403_FORBIDDEN)
 
-
     def update(self, request, *args, **kwargs):
         if has_permission_to_edit_categoria(request.user):
             instance = self.get_object()
@@ -100,7 +106,6 @@ class CategoriaViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Usuário sem permissão para editar uma categoria'}, status=status.HTTP_403_FORBIDDEN)
 
-
     def partial_update(self, request, *args, **kwargs):
         # Atualiza parcialmente uma categoria
         if has_permission_to_edit_categoria(request.user):
@@ -119,4 +124,68 @@ class CategoriaViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         else:
             return Response({'error': "Usuário sem permissão para visualizar os detalhes da categoria"})
-        
+
+class ItemViewSet(viewsets.ModelViewSet):
+    """
+    Viewset para manipulação de Itens
+    """
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ItemListSerializer
+        return ItemSerializer
+
+    def get_queryset(self):
+        queryset = Item.objects.all()
+        # Filtre de acordo com as permissões do usuário
+        if not has_permission_to_view_item(self.request.user):
+            return Item.objects.none()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        """
+        Lista de todos os itens com paginacao opcional
+        """
+        # Acessando o valor do 'page size' na consulta
+        page_size = request.query_params.get('page_size')
+
+        if has_permission_to_view_item(request.user):
+            if page_size:
+                # Se 'page_size' for especificado, use o valor fornecido
+                self.paginator.page_size = int(page_size)
+            return super().list(request, *args, **kwargs)
+        else:
+            return Response({'error': 'Usuário sem permissão para visualizar os itens'}, status=status.HTTP_403_FORBIDDEN)
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        if has_permission_to_edit_item(user):
+
+            # Copiando e tratando os dados da solicitação
+            data = request.data.copy()
+            data['usuario_cadastro'] = user.id
+
+            serializer = self.get_serializer(data=data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'Usuário sem permissão para cadastrar um item'}, status=status.HTTP_403_FORBIDDEN)
+
+    def update(self, request, *args, **kwargs):
+        if has_permission_to_edit_item(request.user):
+            instance = self.get_object()
+            
+            # Copie e trate os dados da solicitação
+            data = request.data.copy()
+            data['usuario_cadastro'] = instance.usuario_cadastro_id
+            
+            serializer = self.get_serializer(instance, data=data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'Usuário sem permissão para editar um item'}, status=status.HTTP_403_FORBIDDEN)
+
+
+
+
