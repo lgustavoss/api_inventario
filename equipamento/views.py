@@ -267,6 +267,6 @@ class EquipamentoListSimplesViewSet(APIView):
 class EquipamentoAcessoViewSet(APIView):
     """ViewSet para listagem dos equipamentos e dados de acesso remoto"""
     def get(self, request):
-        queryset = Equipamento.objects.all()
+        queryset = Equipamento.objects.exclude(acesso_remoto__isnull=True).exclude(acesso_remoto__exact='')
         serializer = EquipamentoAcessoSerialier(queryset, many=True)
         return Response(serializer.data)
