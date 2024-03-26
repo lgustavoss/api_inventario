@@ -11,7 +11,6 @@ class CategoriaListSerializer(serializers.ModelSerializer):
             'id',
             'nome',
             'descricao',
-            'tipo_equipamento',
             'status',
         ]
 
@@ -47,8 +46,13 @@ class CategoriaSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         # Removendo chaves existentes
+        representation.pop('tipo_equipamento', None)
         representation.pop('usuario_cadastro', None)
         representation.pop('usuario_ultima_alteracao', None)
+
+        # Adicionando as chaves personalizadas para o tipo_equipamento
+        tipo_equipamentos = instance.tipo_equipamento.all()  # Acessando os objetos relacionados
+        representation['tipo_equipamento'] = [{"id": tipo.id, "tipo": tipo.tipo} for tipo in tipo_equipamentos]
 
         # Adicionando as chaves personalizadas para o usuario_cadastro
         representation['usuario_cadastro_id'] = instance.usuario_cadastro.id
@@ -92,15 +96,31 @@ class CategoriaSerializer(serializers.ModelSerializer):
     
 # Serializador para Lisagem de todos os Itens
 class ItemListSerializer(serializers.ModelSerializer):
+    categoria_id = serializers.SerializerMethodField()
+    categoria_nome = serializers.SerializerMethodField()
+
     class Meta:
         model = Item
         fields = [
             'id',
             'nome',
-            'categoria',
+            'categoria_id',
+            'categoria_nome',
             'quantidade',
             'status',
         ]
+
+    def get_categoria_id(self, instance):
+        if instance.categoria:
+            return instance.categoria.id
+        return None
+
+    def get_categoria_nome(self, instance):
+        if instance.categoria:
+            return instance.categoria.nome
+        return None
+
+
 
 # Serializador para detalhe dos Itens
 class ItemSerializer(serializers.ModelSerializer):
@@ -134,8 +154,13 @@ class ItemSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         # Removendo chaves existentes
+        representation.pop('categoria', None)
         representation.pop('usuario_cadastro', None)
         representation.pop('usuario_ultima_alteracao', None)
+
+        # Adicionando as chaves personalizadas para a categoria
+        representation['categoria_id'] = instance.categoria.id
+        representation['categoria_nome'] = instance.categoria.nome
 
         # Adicionando as chaves personalizadas para o usuario_cadastro
         representation['usuario_cadastro_id'] = instance.usuario_cadastro.id
