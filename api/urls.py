@@ -19,7 +19,6 @@ from django.urls import path, include
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('colaborador/', include('colaborador.urls')), #chamando a rota de urls de colaborador
     path('empresa/', include('empresa.urls')), #chamando a rota de urls de empresa
     path('tipo_equipamento/', include('tipo_equipamento.urls')), #chamando a rota de urls de tipo_equipamento
@@ -27,4 +26,5 @@ urlpatterns = [
     path('usuario/', include('users.urls')), #chamando a rota de urls de usuarios
     path('dashboard/', include('dashboard.urls')), #chamando a rota do dashboard
     path('setor/', include('setor.urls')), #chamando a rota do setor
+    path('suprimentos/', include('suprimentos.urls')), #chamando a rota do suprimentos
 ]

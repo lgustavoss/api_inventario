@@ -182,14 +182,13 @@ class AssociarUsuarioGrupo(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+# Permissoes de Empresa
 def has_permission_to_view_empresa(user):
     # Verificar se o usuário está associado a grupos que tenham a permissão adequada
     grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_empresa', user=user)
     
     # Se houver algum grupo com permissão, o usuário pode visualizar empresas
     return grupos_com_permissao.exists()
-
 
 def has_permission_to_detail_empresa(user):
     # Verificar se o usuário está associado a grupos que tenham a permissão adequada
@@ -205,6 +204,7 @@ def has_permission_to_edit_empresa(user):
     # Se houver algum grupo com permissão, o usuário pode editar uma empresa
     return grupos_com_permissao.exists()
 
+# Permissoes de Colaborador
 def has_permission_to_view_colaborador(user):
     # Verificar se o usuário está associado a grupos que tenham a permissão adequada
     grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_colaborador', user=user)
@@ -226,6 +226,7 @@ def has_permission_to_edit_colaborador(user):
     # Se houver algum grupo com permissão, o usuário pode editar uma colaborador
     return grupos_com_permissao.exists()
 
+# Permissoes do Tipo de Equipamento
 def has_permission_to_view_tipo_equipamento(user):
     # Verificar se o usuário está associado a grupos que tenham a permissão adequada
     grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_tipo_equipamento', user=user)
@@ -247,7 +248,7 @@ def has_permission_to_edit_tipo_equipamento(user):
     # Se houver algum grupo com permissão, o usuário pode editar uma tipo_equipamento
     return grupos_com_permissao.exists()
 
-
+# Permissoes do Equipamento
 def has_permission_to_view_equipamento(user):
     # Verificar se o usuário está associado a grupos que tenham a permissão adequada
     grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_equipamento', user=user)
@@ -269,7 +270,7 @@ def has_permission_to_edit_equipamento(user):
     # Se houver algum grupo com permissão, o usuário pode editar uma equipamento
     return grupos_com_permissao.exists()
 
-
+# Permissoes do Setor
 def has_permission_to_view_setor(user):
     # Verificar se o usuário está associado a grupos que tenham a permissão adequada
     grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_setor', user=user)
@@ -289,4 +290,42 @@ def has_permission_to_edit_setor(user):
     grupos_com_permissao = Group.objects.filter(permissions__codename='editar_setor', user=user)
     
     # Se houver algum grupo com permissão, o usuário pode editar uma setor
+    return grupos_com_permissao.exists()
+
+# Permissões de Categoria
+def has_permission_to_view_categoria(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_categoria', user=user)
+
+    return grupos_com_permissao.exists()
+
+def has_permission_to_detail_categoria(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualiza_detalhe_categoria', user=user)
+
+    return grupos_com_permissao.exists()
+
+def has_permission_to_edit_categoria(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='editar_categoria', user=user)
+
+    return grupos_com_permissao.exists()
+
+# Permissões de Item
+def has_permission_to_view_item(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualizar_item', user=user)
+
+    return grupos_com_permissao.exists()
+
+def has_permission_to_detail_item(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='visualiza_detalhe_item', user=user)
+
+    return grupos_com_permissao.exists()
+
+def has_permission_to_edit_item(user):
+    # Verifica se o usuário está associado a grupos que tenham a permissao adequada
+    grupos_com_permissao = Group.objects.filter(permissions__codename='editar_item', user=user)
+
     return grupos_com_permissao.exists()

@@ -48,7 +48,7 @@ def create_permissions(sender, **kwargs):
 
         visualiza_detalhe_colaborador, created = Permission.objects.get_or_create(
             codename = 'visualiza_detalhe_colaborador',
-            name = 'Visualiar Detalhes do Colaborador',
+            name = 'Visualizar Detalhes do Colaborador',
             content_type = content_type,
         )
 

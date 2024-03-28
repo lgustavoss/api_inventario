@@ -56,8 +56,9 @@ INSTALLED_APPS = [
     'empresa',
     'tipo_equipamento',
     'equipamento',
-    'dashboard',
     'setor',
+    'dashboard',
+    'suprimentos',
 ]
 
 MIDDLEWARE = [

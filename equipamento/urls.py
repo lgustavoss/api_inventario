@@ -6,6 +6,7 @@ from .views import (
     EquipamentoTransferenciaColaboradorView,
     EquipamentoHistoricoView,
     EquipamentoListSimplesViewSet,
+    EquipamentoAcessoViewSet,
 )
 
 
@@ -19,4 +20,5 @@ urlpatterns = [
     path('<int:pk>/atualizar_situacao/', EquipamentoViewSet.as_view({'put': 'atualizar_situacao'}), name='equipamento_atualizar_situacao'),
     path('<int:pk>/historico/', EquipamentoHistoricoView.as_view({'get': 'historico'}), name='equipamento_historico'),
     path('listagem-simplificada/', EquipamentoListSimplesViewSet.as_view(), name='equipamento_listagem_simplificada'),
+    path('listagem-acessos/', EquipamentoAcessoViewSet.as_view(), name='equipamento_listagem_acessos'),
 ]

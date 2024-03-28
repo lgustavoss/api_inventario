@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth.models import User
 from .models import Colaborador
-from equipamento.serializers import EquipamentoSerializer
 from equipamento.models import Equipamento
 
 
@@ -12,7 +11,6 @@ class ColaboradorListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Colaborador
         fields = ['id', 'nome', 'cpf', 'status']
-
 
 # Serializador para detalhes do Colaborador
 class ColaboradorSerializer(serializers.ModelSerializer):
@@ -102,7 +100,6 @@ class ColaboradorStatusSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("O colaborador já possui esse status.")
 
         return instance
-    
 
 # Serializer para listar os equipamentos vinculados a um colaborador
 class EquipamentoColaboradorSerializer(serializers.ModelSerializer):
